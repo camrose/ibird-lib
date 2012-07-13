@@ -164,7 +164,11 @@ void processRadioBuffer(void) {
     MacPacket packet;
     
     packet = radioDequeueRxPacket();
-    if(packet == NULL) { return; }
+    if(packet == NULL) { 
+		return;
+	} else {
+		Nop();
+	}
 
     // If enqueue fails, clean up packet
     if(cmdQueuePacket(packet) == 0) {
@@ -184,7 +188,7 @@ void setupAll(void) {
 
     sclockSetup(); // System clock
     batSetup(); // Battery monitor
-    spicSetup(); // SPI-DMA controller
+    //spicSetup(); // SPI-DMA controller
     ppoolInit(); // Initialize packet pool
     dirInit(DIRECTORY_SIZE); // Initialize directory
 
@@ -194,14 +198,14 @@ void setupAll(void) {
     // Note: OV7660 I2C operates at 100 kHz on the same bus
     // as the accelerometer. Make sure to set up camera module first!
     dfmemSetup(); // Flash memory device
-    camSetup(cam_frames, NUM_CAM_FRAMES); // Camera device
-    servoSetup(); // Soft servo control
+    camSetup(); // Camera device
+    //servoSetup(); // Soft servo control
     
     xlSetup();
     xlSetRange(16); // +- 16 g range
     xlSetOutputRate(0, 0x0c); // 800 Hz
     gyroSetup();
-    gyroSetDeadZone(35);
+    //gyroSetDeadZone(35);
 
     // Seeds random number generation using IMU sensors
     setRandomSeed(); 
@@ -249,7 +253,7 @@ void setupAll(void) {
     camStart();    // Start camera capture
     EnableIntT5; // Start control loop
 
-    radioSetWatchdogState(1);
+    radioSetWatchdogState(0);
     radioSetWatchdogTime(400);
 
 }

@@ -41,7 +41,7 @@
  */
 
 #include "controller.h"
-#include "dsp.h"
+#include "dfilter.h"
 #include "attitude.h"
 #include "regulator.h"
 #include "utils.h"
@@ -54,6 +54,7 @@
 #include <stdlib.h>
 #include "bams.h"
 #include "cv.h"
+#include "sync_servo.h"
 
 // ==== Constants ==============================================================
 
@@ -61,6 +62,7 @@
 typedef struct {
     float thrust;
     float steer;
+    float elev;
 } ControlOutput;
 
 // Lower level components
@@ -88,6 +90,8 @@ void rgltrSetup(float ts) {
     reg_state = REG_OFF;
         
     mcSetup();  // Set up motor driver
+
+    //servoStart();
     
     yawPid = ctrlCreatePidParams(ts);
     if(yawPid == NULL) { return; }
@@ -123,7 +127,7 @@ void rgltrSetState(unsigned char flag) {
 
 void rgltrSetYawRateFilter(RateFilterParams params) {
 
-    yawRateFilter = dspCreateFilter(params->order, params->type,
+    yawRateFilter = dfilterCreate(params->order, params->type,
                                     params->xcoeffs, params->ycoeffs);
     
 } 
@@ -131,14 +135,14 @@ void rgltrSetYawRateFilter(RateFilterParams params) {
 
 void rgltrSetPitchRateFilter(RateFilterParams params) {
 
-    pitchRateFilter = dspCreateFilter(params->order, params->type,
+    pitchRateFilter = dfilterCreate(params->order, params->type,
                                     params->xcoeffs, params->ycoeffs);
 
 } 
 
 void rgltrSetRollRateFilter(RateFilterParams params) {
 
-    rollRateFilter = dspCreateFilter(params->order, params->type,
+    rollRateFilter = dfilterCreate(params->order, params->type,
                                     params->xcoeffs, params->ycoeffs);
 
 }
@@ -182,17 +186,18 @@ void rgltrSetRollRef(float ref) {
     ctrlSetRef(rollPid, ref);
 }
 
-void rgltrSetRemoteControlValues(float thrust, float steer) {
+void rgltrSetRemoteControlValues(float thrust, float steer, float elev) {
 
     rc_outputs.thrust = thrust;
     rc_outputs.steer = steer;
+    rc_outputs.elev = elev;
     
 }
 
 void rgltrRunController(void) {
 
     unsigned long time;
-    float steer, thrust;
+    float steer, thrust, elev;
     PoseEstimateStruct pose;    
 
     if(!is_ready) { return; }   // Don't run if not ready
@@ -209,6 +214,7 @@ void rgltrRunController(void) {
 
         steer = rc_outputs.steer;
         thrust = rc_outputs.thrust;
+		elev = rc_outputs.elev;
 
     } else if(reg_state == REG_TRACK){
 
@@ -221,6 +227,7 @@ void rgltrRunController(void) {
     // TODO: Roll control mixing
     mcSteer(steer);
     mcThrust(thrust);
+    //servoSet(elev);
     
 }
 

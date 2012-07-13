@@ -112,7 +112,7 @@ void rgltrSetRollRef(float ref);
  * @param thrust - Thrust duty cycle from 0.0 to 100.0
  * @param steer - Steering duty cycle from -100.0 to 100.0
  */
-void rgltrSetRemoteControlValues(float thrust, float steer);
+void rgltrSetRemoteControlValues(float thrust, float steer, float elev);
 
 /**
  * Execute control loop iteration. This method should be called regularly every

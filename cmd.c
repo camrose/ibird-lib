@@ -44,7 +44,6 @@
  */
 #include "cam.h"
 #include "telemetry.h"
-#include "cmd.h"
 #include "cmd_const.h"
 #include "radio.h"
 #include "net.h"
@@ -74,6 +73,9 @@
 #define MEM_PAGES               (100)
 #define MEM_PAGESIZE            (264)
 #define MEM_DATAPOINT_SIZE      (22)
+
+#define DS_IMAGE_COLS           (30) // NATIVE_IMAGE_COLS/DS_COL_PERIOD
+#define DS_IMAGE_ROWS           (30) // NATIVE_IMAGE_ROWS/DS_ROW_PERIOD
 
 typedef union {
     struct {                                // Total: 22
@@ -155,7 +157,7 @@ static void cmdGetGyroCalibParam(MacPacket packet);
 
 static void cmdSetEstimateRunning(MacPacket packet);
 
-static void cmdSetHP(MacPacket packet);
+//static void cmdSetHP(MacPacket packet);
 
 static void cmdZeroEstimate(MacPacket packet);
 static void cmdRequestAttitude(MacPacket packet);
@@ -195,7 +197,7 @@ unsigned int cmdSetup(unsigned int queue_size) {
 
     cmd_func[CMD_ECHO] = &cmdEcho;
 
-    cmd_func[CMD_SET_REGULATOR_MODE] = &cmdSetRegulatorMode;
+    cmd_func[CMD_SET_REGULATOR_STATE] = &cmdSetRegulatorMode;
     cmd_func[CMD_SET_REGULATOR_REF] = &cmdSetRegulatorRef;
     cmd_func[CMD_SET_REGULATOR_PID] = &cmdSetRegulatorPid;
     cmd_func[CMD_SET_REGULATOR_RATE_FILTER] = &cmdSetRegulatorRateFilter;
@@ -217,21 +219,21 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_RUN_GYRO_CALIB] = &cmdRunGyroCalib;
     cmd_func[CMD_GET_GYRO_CALIB_PARAM] = &cmdGetGyroCalibParam;
 
-    cmd_func[CMD_SET_HP] = &cmdSetHP;
+    //cmd_func[CMD_SET_HP] = &cmdSetHP;
     
-    cmd_func[CMD_ZERO_ESTIMATE] = &cmdZeroEstimate;
-    cmd_func[CMD_REQUEST_ATTITUDE] = &cmdRequestAttitude;
-    cmd_func[CMD_RESPONSE_ATTITUDE] = &cmdResponseAttitude;
+    //cmd_func[CMD_ZERO_ESTIMATE] = &cmdZeroEstimate;
+    //cmd_func[CMD_REQUEST_ATTITUDE] = &cmdRequestAttitude;
+    //cmd_func[CMD_RESPONSE_ATTITUDE] = &cmdResponseAttitude;
     
     return 1;
     
 }
 
-void cmdSetHP(MacPacket packet) {
+/*void cmdSetHP(MacPacket packet) {
 
     cvSetHP();
 
-}
+}*/
 
 unsigned int cmdQueuePacket(MacPacket packet) {
 
@@ -248,7 +250,11 @@ void cmdProcessBuffer(void) {
     // Check for unprocessed packet
     //packet = radioDequeueRxPacket();
     packet = carrayPopTail(input_queue);
-    if(packet == NULL) { return; }
+    if(packet == NULL) { 
+		return;
+	} else {
+		Nop();
+	}
 
     pld = macGetPayload(packet);
     command = payGetType(pld);
@@ -402,7 +408,7 @@ static void cmdSetRegulatorMode(MacPacket packet) {
     
     unsigned char flag = frame[0];
 
-    rgltrSetMode(flag);
+    rgltrSetState(flag);
     
 }
 
@@ -675,7 +681,7 @@ static void cmdRequestRawFrame(MacPacket packet) {
     width = DS_IMAGE_COLS;
 
     for(i = 0; i < height; i++) {        
-        row = &(frame->pixels[i]);
+        row = &(frame->rows[i]);
         to_send = width;
         while(to_send > 0) {            
             response = radioRequestPacket(block_size + 6);
@@ -748,7 +754,7 @@ static void cmdSetBackgroundFrame(MacPacket packet) {
 
 static void cmdCamParamRequest(MacPacket packet) {
 
-    Payload pld;
+    /*Payload pld;
     CamParamStruct params;
     MacPacket response;
     
@@ -764,14 +770,14 @@ static void cmdCamParamRequest(MacPacket packet) {
     paySetStatus(pld, 0);
     paySetData(pld, sizeof(CamParamStruct), (unsigned char*)&params);
 
-    while(!radioEnqueueTxPacket(response));
+    while(!radioEnqueueTxPacket(response));*/
 
 
 }
 
 static void cmdCamParamResponse(MacPacket packet) {
 
-    Payload pld;
+    /*Payload pld;
     unsigned char *frame;
     CamParamStruct *params;
     LStrobeParamStruct lstrobe_params;
@@ -795,7 +801,7 @@ static void cmdCamParamResponse(MacPacket packet) {
     lstrobe_params.on_time = 625/4; // 1 ms
     lstrobe_params.off_time = lstrobe_params.period - lstrobe_params.on_time;
     lstrobeSetParam(&lstrobe_params);
-    lstrobeStart();
+    lstrobeStart();*/
     
 }
 
@@ -809,7 +815,7 @@ static void cmdZeroEstimate(MacPacket packet) {
 
 static void cmdRequestAttitude(MacPacket packet) {
 
-    telemSendAttitude(macGetSrcAddr(packet));
+    telemSendB(macGetSrcAddr(packet));
 
 }
 
