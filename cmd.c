@@ -73,6 +73,7 @@
 #define MEM_PAGES               (100)
 #define MEM_PAGESIZE            (264)
 #define MEM_DATAPOINT_SIZE      (22)
+#define MEM_TELEM_DATAPOINT     (22)
 
 #define DS_IMAGE_COLS           (30) // NATIVE_IMAGE_COLS/DS_COL_PERIOD
 #define DS_IMAGE_ROWS           (30) // NATIVE_IMAGE_ROWS/DS_ROW_PERIOD
@@ -100,6 +101,16 @@ typedef union {             // (20)
     };
     unsigned char contents[MEM_TELEMETRY_SIZE];
 } TelemetryPoint;
+
+typedef union {
+    struct {
+        TelemetryStructB telem;               // (10)
+        unsigned long xl_timestamp;         // (4)
+        unsigned char xl[3*sizeof(int)];    // 2*3 = (6)
+        unsigned int sample;                // (2)
+    };
+    unsigned char contents[MEM_TELEM_DATAPOINT];
+} TelemDatapoint;
 
 typedef union {
     float fval;
@@ -221,7 +232,7 @@ unsigned int cmdSetup(unsigned int queue_size) {
 
     //cmd_func[CMD_SET_HP] = &cmdSetHP;
     
-    //cmd_func[CMD_ZERO_ESTIMATE] = &cmdZeroEstimate;
+    cmd_func[CMD_ZERO_ESTIMATE] = &cmdZeroEstimate;
     //cmd_func[CMD_REQUEST_ATTITUDE] = &cmdRequestAttitude;
     //cmd_func[CMD_RESPONSE_ATTITUDE] = &cmdResponseAttitude;
     
@@ -625,7 +636,70 @@ static void cmdGetGyroCalibParam(MacPacket packet) {
 
 static void cmdRecordTelemetry(MacPacket packet) {
 
-    
+    Payload pld;
+    unsigned char *frame;
+    TelemDatapoint data;
+    unsigned int samples, mem_byte, mem_page, count, max_page, sector;
+    unsigned long next_sample_time, current_time;
+    static unsigned char buf_index = 1;
+
+    pld = macGetPayload(packet);
+    frame = payGetData(pld);
+
+    samples = frame[0] + (frame[1] << 8);
+    count = samples;
+    next_sample_time = 0;
+
+    mem_byte = 0;
+    mem_page = 0x080;
+    max_page = mem_page + (unsigned int) ceil(samples/22.0);
+    sector = mem_page;
+
+    // Erase as many memory sectors as needed
+    LED_RED = 1;
+    while (sector < max_page) {
+        dfmemEraseSector(sector);
+        sector += 0x80;
+    }
+    LED_RED = 0;
+
+    // Dump sensor data to memory
+    LED_ORANGE = 1;
+
+    next_sample_time = 0;
+    do {
+        current_time = sclockGetGlobalTicks();
+        if (current_time > next_sample_time) {
+
+            // NEW CODE
+            data.sample = samples - count;
+
+            // Read telemetry values
+            data.telem.time = sclockGetGlobalTicks();
+            data.telem.pose[0] = attGetYawBAMS();
+            data.telem.pose[1] = attGetPitchBAMS();
+            data.telem.pose[2] = attGetRollBAMS();
+
+            // Read accelerometer values
+            xlGetXYZ(data.xl);
+            data.xl_timestamp = sclockGetGlobalTicks();
+
+            // Send datapoint to memory buffer
+            dfmemWriteBuffer(data.contents, MEM_TELEM_DATAPOINT, mem_byte, buf_index);
+            mem_byte += MEM_TELEM_DATAPOINT;
+
+            // If buffer full, write it to memory
+            if (mem_byte + MEM_TELEM_DATAPOINT > MEM_PAGESIZE) {
+                dfmemWriteBuffer2MemoryNoErase(mem_page++, buf_index);
+                buf_index ^= 0x01;  // toggle between buffer 0 and 1
+                mem_byte = 0;
+            }
+
+            next_sample_time = next_sample_time + 1000;
+            count--;
+        }
+    } while (count);
+    LED_ORANGE = 0;
 
 }
 

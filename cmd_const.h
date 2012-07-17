@@ -99,6 +99,8 @@
 #define CMD_CAM_PARAM_REQUEST           (0x48)
 #define CMD_CAM_PARAM_RESPONSE          (0x49)
 
+#define CMD_ZERO_ESTIMATE               (0x4C)
+
 
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use

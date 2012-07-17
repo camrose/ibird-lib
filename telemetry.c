@@ -100,6 +100,7 @@ void telemPopulateB(TelemetryStructB *telemetry) {
     telemetry->pose[0] = attGetYawBAMS();
     telemetry->pose[1] = attGetPitchBAMS();
     telemetry->pose[2] = attGetRollBAMS();
+    //gyroGetXYZ(telemetry->gyro);
     
     return;
 	

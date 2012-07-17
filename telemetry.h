@@ -65,7 +65,8 @@ typedef TelemetryStructA* TelemetryA;
 
 typedef struct {
 	unsigned long time; // System clock timestamp (4)	
-	bams16_t pose[3]; // Euler angles in binary angles (6)	
+	bams16_t pose[3]; // Euler angles in binary angles (6)
+        //unsigned int gyro[3];
 } TelemetryStructB;
 
 typedef TelemetryStructB* TelemetryB;

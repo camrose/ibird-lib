@@ -60,12 +60,12 @@
 #define MAX_REQUEST_ATTEMPTS        (10)
 
 #define DEFAULT_LOCAL_ADDR          (0x1021)
-#define DEFAULT_LOCAL_PAN           (0x1001)
-#define DEFAULT_LOCAL_CHANNEL       (0x15)
+#define DEFAULT_LOCAL_PAN           (0x1005)
+#define DEFAULT_LOCAL_CHANNEL       (0x12)
 
 #define DEFAULT_BASE_ADDR           (0x1020)
-#define DEFAULT_BASE_PAN            (0x1001)
-#define DEFAULT_BASE_CHANNEL        (0x15)
+#define DEFAULT_BASE_PAN            (0x1005)
+#define DEFAULT_BASE_CHANNEL        (0x12)
 
 // ==== STATIC VARIABLES ====================================
 // Local assigned parameters
