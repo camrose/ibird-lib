@@ -172,7 +172,7 @@ void rgltrSetMode(unsigned char flag) {
 
 void rgltrSetYawRateFilter(RateFilterParams params) {
 
-    // yawRateFilter = dfilterCreate(params->order, params->type,
+    yawRateFilter = dfilterCreate(params->order, params->type,
                                     // params->xcoeffs, params->ycoeffs);
     dfilterInit(params->order, params->type, params->xcoeffs, params->ycoeffs);
     
