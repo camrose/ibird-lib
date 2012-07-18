@@ -48,8 +48,8 @@
 
 // ==== REFERENCES =============================================
 
-#include "cmd.h"
 #include "init_default.h"
+#include "cmd.h"
 
 // Utils
 #include "counter.h"
