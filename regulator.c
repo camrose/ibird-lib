@@ -90,7 +90,7 @@ typedef struct {
 
 // Lower level components
 CtrlPidParamStruct yawPid, pitchPid, rollPid;
-DigitalFilterStruct yawRateFilter, pitchRateFilter, rollRateFilter;
+DigitalFilter yawRateFilter, pitchRateFilter, rollRateFilter;
 
 // State info
 static unsigned char is_ready = 0;
@@ -172,24 +172,20 @@ void rgltrSetMode(unsigned char flag) {
 
 void rgltrSetYawRateFilter(RateFilterParams params) {
 
-    // yawRateFilter = dfilterCreate(params->order, params->type,
-                                    // params->xcoeffs, params->ycoeffs);
-    dfilterInit(params->order, params->type, params->xcoeffs, params->ycoeffs);
+    yawRateFilter = dfilterCreate(params->order, params->type, params->xcoeffs, params->ycoeffs);
     
 } 
 
 
 void rgltrSetPitchRateFilter(RateFilterParams params) {
 
-    pitchRateFilter = dfilterCreate(params->order, params->type,
-                                    params->xcoeffs, params->ycoeffs);
+    pitchRateFilter = dfilterCreate(params->order, params->type, params->xcoeffs, params->ycoeffs);
 
 } 
 
 void rgltrSetRollRateFilter(RateFilterParams params) {
 
-    rollRateFilter = dfilterCreate(params->order, params->type,
-                                    params->xcoeffs, params->ycoeffs);
+    rollRateFilter = dfilterCreate(params->order, params->type, params->xcoeffs, params->ycoeffs);
 
 }
 
