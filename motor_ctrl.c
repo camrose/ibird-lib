@@ -71,8 +71,6 @@ void mcSetup(void) {
 }
 
 void mcStop(void) {
-
-    unsigned int i;
     
     mcSetDutyCycle(MC_CHANNEL_PWM1, 0.0);
     mcSetDutyCycle(MC_CHANNEL_PWM2, 0.0);

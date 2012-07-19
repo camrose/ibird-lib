@@ -137,11 +137,10 @@ PoolBuffItem pbuffForceGetIdleOldest(PoolBuff pbuff) {
 
 }
  
- void pbuffReturn(PoolBuff pbuff, PoolBuffItem item) {
+void pbuffReturn(PoolBuff pbuff, PoolBuffItem item) {
  
     if(!pbuff->valid) { return; }
     
     carrayAddTail(pbuff->idle, item);
  
- }
- 
+}
