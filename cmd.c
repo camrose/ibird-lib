@@ -226,7 +226,12 @@ void cmdProcessBuffer(void) {
     // Check for unprocessed packet
     //packet = radioDequeueRxPacket();
     packet = carrayPopTail(input_queue);
-    if(packet == NULL) { return; }
+    if(packet == NULL) { 
+        return;
+    } else {
+        Nop();
+        Nop();
+    }
 
     pld = macGetPayload(packet);
     command = payGetType(pld);
@@ -506,7 +511,7 @@ static void cmdGetMemContents(MacPacket packet) {
             }
 
             macSetDestAddr(data_packet, 0x1020);
-            macSetDestPan(data_packet, 0x1001);
+            macSetDestPan(data_packet, 0x1005);
             pld = macGetPayload(data_packet);
 
             dfmemRead(page, j, tx_data_size, payGetData(pld));

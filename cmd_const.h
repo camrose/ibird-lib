@@ -106,6 +106,7 @@
 
 #define CMD_REQUEST_ATTITUDE            (0x50)      // Request attitude
 #define CMD_RESPONSE_ATTITUDE           (0x51)      // Response to request for attitude
+
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use
 

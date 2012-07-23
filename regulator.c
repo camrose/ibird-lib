@@ -173,7 +173,7 @@ void rgltrSetMode(unsigned char flag) {
 void rgltrSetYawRateFilter(RateFilterParams params) {
 
     yawRateFilter = dfilterCreate(params->order, params->type, params->xcoeffs, params->ycoeffs);
-    //dfilterInit(params->order, params->type, params->xcoeffs, params->ycoeffs);
+    //dfilterInit(yawRateFilter, params->order, params->type, params->xcoeffs, params->ycoeffs);
     
 } 
 
@@ -181,12 +181,14 @@ void rgltrSetYawRateFilter(RateFilterParams params) {
 void rgltrSetPitchRateFilter(RateFilterParams params) {
 
     pitchRateFilter = dfilterCreate(params->order, params->type, params->xcoeffs, params->ycoeffs);
+    //dfilterInit(pitchRateFilter, params->order, params->type, params->xcoeffs, params->ycoeffs);
 
 } 
 
 void rgltrSetRollRateFilter(RateFilterParams params) {
 
     rollRateFilter = dfilterCreate(params->order, params->type, params->xcoeffs, params->ycoeffs);
+    //dfilterInit(rollRateFilter, params->order, params->type, params->xcoeffs, params->ycoeffs);
 
 }
 
