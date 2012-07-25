@@ -27,50 +27,33 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 *
-* Rate-Based Reference Generator
+* Ping-Pong Buffer
 *
 * by Humphrey Hu
 *
 * v.0.1
 *
-* Revisions: 
-*  Humphrey Hu		    2012-07-09       Initial implementation
-*
+* Revisions:
+*  Humphrey Hu     2012-07-21      Initial release
 */
 
-#ifndef __RATE_H
-#define __RATE_H
+#ifndef __PPBUFF_H
+#define __PPBUFF_H
 
+typedef void* PingPongItem;
 typedef struct {
-    float yaw_rate;
-    float pitch_rate;
-    float roll_rate;
-} RateStruct;
+    unsigned char is_valid;
+    unsigned char active_index;
+    PingPongItem items[2];
+} PingPongBuffer;
 
-typedef RateStruct *Rate;
+void ppbuffInit(PingPongBuffer *ppbuff);
+void ppbuffFlip(PingPongBuffer *ppbuff);
 
-/**
- * Initialize the module for use
- * @param ts - Operation frequency
- */
-void rateSetup(float ts);
+PingPongItem ppbuffWriteActive(PingPongBuffer *ppbuff, PingPongItem item);
+PingPongItem ppbuffWriteInactive(PingPongBuffer *ppbuff, PingPongItem item);
 
-/**
- * Set reference slew rates
- * @param rate - Pointer to argument RateStruct
- */
-void rateSetGlobalSlew(Rate rate);
-void rateSetBodySlew(Rate rate);
-
-/**
- * Start/stop reference slewing
- */
-void rateEnable(void);
-void rateDisable(void);
-
-/**
- * Generate next reference. Should be called at fixed frequency.
- */
-void rateProcess(void);
+PingPongItem ppbuffReadActive(PingPongBuffer *ppbuff);
+PingPongItem ppbuffReadInactive(PingPongBuffer *ppbuff);
 
 #endif

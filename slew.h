@@ -27,50 +27,43 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 *
-* Rate-Based Reference Generator
+* Reference Slew Limiter
 *
 * by Humphrey Hu
 *
 * v.0.1
 *
 * Revisions: 
-*  Humphrey Hu		    2012-07-09       Initial implementation
-*
+*  Humphrey Hu		    2012-07-22       Initial implementation
 */
 
-#ifndef __RATE_H
-#define __RATE_H
+#ifndef __SLEW_H
+#define __SLEW_H
 
-typedef struct {
-    float yaw_rate;
-    float pitch_rate;
-    float roll_rate;
-} RateStruct;
+#include "quat.h"
+/**
+ * Initialize the slew rate limiter
+ * @param ts - Period in seconds
+ */
+void slewSetup(float ts);
 
-typedef RateStruct *Rate;
+/*
+ * Start/stop slew rate limiting
+ */
+void slewEnable(void);
+void slewDisable(void);
 
 /**
- * Initialize the module for use
- * @param ts - Operation frequency
+ * Set the slew rate limit
+ * @param rate - Limit in radians/second. 0.0 means unlimited.
  */
-void rateSetup(float ts);
+void slewSetLimit(float rate);
 
 /**
- * Set reference slew rates
- * @param rate - Pointer to argument RateStruct
+ * Apply limiting to a reference input
+ * @param input - Reference
+ * @param output - Rate-limited reference
  */
-void rateSetGlobalSlew(Rate rate);
-void rateSetBodySlew(Rate rate);
-
-/**
- * Start/stop reference slewing
- */
-void rateEnable(void);
-void rateDisable(void);
-
-/**
- * Generate next reference. Should be called at fixed frequency.
- */
-void rateProcess(void);
+void slewProcess(Quaternion *input, Quaternion *output);
 
 #endif
