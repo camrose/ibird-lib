@@ -52,7 +52,9 @@ typedef struct {
     Quaternion error;   // Error (16)
     float u[3];         // Outputs (12)
     unsigned long time; // Timestamp (4)
-} RegulatorStateStruct; // Total: 64 bytes
+    //float xl_data[3];   // Accel Data (12)
+    unsigned char xl_data[3*sizeof(int)];
+} RegulatorStateStruct; // Total: 70 bytes
 
 typedef RegulatorStateStruct* RegulatorState;
 

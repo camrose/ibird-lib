@@ -56,6 +56,7 @@
 #include "dfilter.h"
 #include "attitude.h"
 #include "cv.h"
+#include "xl.h"
 
 // Hardware/actuator interface
 #include "motor_ctrl.h"
@@ -283,6 +284,7 @@ void rgltrRunController(void) {
     float steer, thrust, elevator, yaw_err, pitch_err, roll_err;    
     Quaternion pose, error, conj;
     RegulatorState state;
+    int xl_dat[3];
     
     if(!is_ready) { return; }
 
@@ -294,7 +296,9 @@ void rgltrRunController(void) {
     quatMult(&reference, &conj, &error);
 
     // q = [cos(a/2), sin(a/2)*[x, y, z]]
-    // d[x, y, z] = [q]*a/sin(a/2)    
+    // d[x, y, z] = [q]*a/sin(a/2)
+
+    xlGetXYZ(xl_dat);
     
     if(error.w == 1.0) { // a = 0 case
         yaw_err = 0.0;
@@ -346,6 +350,7 @@ void rgltrRunController(void) {
         state->u[0] = thrust;
         state->u[1] = steer;
         state->u[2] = elevator;
+        memcpy(state->xl_data, xl_dat, 3*sizeof(int));
         pbuffAddActive(&reg_state_buff, (void*) state);
     }        
 

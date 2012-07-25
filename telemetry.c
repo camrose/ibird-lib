@@ -186,8 +186,8 @@ void telemSendB(unsigned int addr) {
 	// Create a radio packet
 	packet = radioRequestPacket(TELEMETRY_B_SIZE);
 	if(packet == NULL) { return; }
-    macSetDestAddr(packet, addr);
-    macSetDestPan(packet, netGetLocalPanID());
+        macSetDestAddr(packet, addr);
+        macSetDestPan(packet, netGetLocalPanID());
 
 	// Write the telemetry struct into the packet payload
 	pld = macGetPayload(packet);
@@ -211,8 +211,8 @@ void telemSendAttitude(unsigned int addr) {
 	// Create a radio packet
 	packet = radioRequestPacket(TELEMETRY_ATT_SIZE);
 	if(packet == NULL) { return; }
-    macSetDestAddr(packet, addr);
-    macSetDestPan(packet, netGetLocalPanID());
+        macSetDestAddr(packet, addr);
+        macSetDestPan(packet, netGetLocalPanID());
 
 	// Write the telemetry struct into the packet payload
 	pld = macGetPayload(packet);
