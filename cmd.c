@@ -105,6 +105,9 @@ static void cmdDirDumpResponse(MacPacket packet);
 static void cmdRequestClockUpdate(MacPacket packet);
 static void cmdResponseClockUpdate(MacPacket packet);
 
+static void cmdRotateRefGlobal(MacPacket packet);
+static void cmdRotateRefLocal(MacPacket packet);
+static void cmdSetRegulatorOffsets(MacPacket packet);
 static void cmdSetRegulatorMode(MacPacket packet);
 static void cmdSetRegulatorRef(MacPacket packet);
 static void cmdSetRegulatorPid(MacPacket packet);
@@ -175,6 +178,9 @@ unsigned int cmdSetup(unsigned int queue_size) {
 
     cmd_func[CMD_ECHO] = &cmdEcho;
 
+    cmd_func[CMD_ROTATE_REF_GLOBAL] = &cmdRotateRefGlobal;
+    cmd_func[CMD_ROTATE_REF_LOCAL] = &cmdRotateRefLocal;
+    cmd_func[CMD_SET_REGULATOR_OFFSETS] = &cmdSetRegulatorOffsets;
     cmd_func[CMD_SET_REGULATOR_MODE] = &cmdSetRegulatorMode;
     cmd_func[CMD_SET_REGULATOR_REF] = &cmdSetRegulatorRef;
     cmd_func[CMD_SET_REGULATOR_PID] = &cmdSetRegulatorPid;
@@ -378,16 +384,33 @@ static void cmdResponseClockUpdate(MacPacket packet) {
 }
 
 // ====== Regulator and Control ===============================================
+static void cmdRotateRefGlobal(MacPacket packet) {
+    
+    Quaternion *rot = payGetData(macGetPayload(packet));
+    
+    rateApplyGlobalRotation(rot);
+    
+}
+
+static void cmdRotateRefLocal(MacPacket packet) {
+    
+    Quaternion *rot = payGetData(macGetPayload(packet));
+        
+    rateApplyLocalRotation(rot);
+
+}
+
+static void cmdSetRegulatorOffsets(MacPacket packet) {
+
+    float* frame = payGetData(macGetPayload(packet)); 
+    rgltrSetOffsets(frame);
+
+}
 
 static void cmdSetRegulatorMode(MacPacket packet) {
-    
-    Payload pld = macGetPayload(packet);
-    //unsigned char status = payGetStatus(pld);
-    unsigned char* frame = payGetData(pld);
-    
-    unsigned char flag = frame[0];
-
-    rgltrSetMode(flag);
+        
+    unsigned char* frame = payGetData(macGetPayload(packet));       
+    rgltrSetMode(frame[0]);
     
 }
 
@@ -749,8 +772,8 @@ static void cmdCamParamResponse(MacPacket packet) {
 static void cmdZeroEstimate(MacPacket packet) {
 
     attReset();
-    //xlReadXYZ();
-    //attZero();
+    xlReadXYZ();
+    attZero();
 
 }
 
