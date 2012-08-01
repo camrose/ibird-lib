@@ -561,9 +561,9 @@ static void cmdRunGyroCalib(MacPacket packet) {
     
     unsigned int count = frame[0];
 
-    radioDisableWatchdog();
+    radioSetWatchdogState(0);
     gyroRunCalib(count);
-    radioEnableWatchdog();
+    radioSetWatchdogState(1);
 
 }
 

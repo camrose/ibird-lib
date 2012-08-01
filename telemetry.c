@@ -142,7 +142,7 @@ void telemStopLogging(void) {
 void telemLog(void) {
 
     TelemetryDatapoint *data;
-    RadioStatus radio_stat;
+    //RadioStatus radio_stat;
     
     if(!is_ready) { return; }
     if(status != TELEM_LOGGING) { return; }
@@ -154,9 +154,11 @@ void telemLog(void) {
     if(data == NULL) { return; }
     
     rgltrGetState(&data->reg_state); // Fetch regulator data
-    radioGetStatus(&radio_stat);
-    data->ED = radio_stat.last_ed;
-    data->RSSI = radio_stat.last_rssi;
+    //(&radio_stat);
+    //data->ED = radio_stat.last_ed;
+    //data->RSSI = radio_stat.last_rssi;
+    data->ED = 0;
+    data->RSSI = 0;
     pbuffAddActive(&telem_buff, data); // Queue data
 
 }

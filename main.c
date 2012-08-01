@@ -223,7 +223,7 @@ void setupAll(void) {
     attStart();     // Start attitude estimation 
     EnableIntT5;    // Start control loop
 
-    radioEnableWatchdog();
+    radioSetWatchdogState(1);
     radioSetWatchdogTime(400);
     
 }
@@ -246,7 +246,7 @@ static void setRandomSeed(void) {
 
 static void attemptNetworkConfig(void) {
 
-    radioEnableWatchdog();
+    radioSetWatchdogState(1);
     radioSetWatchdogTime(2000);
     
     while(!netAddressReceived()) {
@@ -261,7 +261,7 @@ static void attemptNetworkConfig(void) {
 
 static void attemptClockSync(void) {
 
-    radioEnableWatchdog();
+    radioSetWatchdogState(1);
     radioSetWatchdogTime(300);
     
     while(!clksyncIsDone()) {
