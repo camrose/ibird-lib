@@ -53,7 +53,7 @@ typedef struct {
     float u[3];         // Outputs (12)
     unsigned long time; // Timestamp (4)
     //float xl_data[3];   // Accel Data (12)
-    unsigned char xl_data[3*sizeof(int)];
+    //unsigned char xl_data[3*sizeof(int)];
 } RegulatorStateStruct; // Total: 70 bytes
 
 typedef RegulatorStateStruct* RegulatorState;
@@ -126,6 +126,7 @@ void rgltrSetRollRef(float ref);
  */
 void rgltrGetQuatRef(Quaternion *ref);
 void rgltrSetQuatRef(Quaternion *ref);
+void rgltrSetTempRot(Quaternion *rot);
 
 /**
  * Set remote control output values

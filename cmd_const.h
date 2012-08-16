@@ -62,6 +62,7 @@
 #define CMD_PING                        (0x12)      // Do nothing
 #define CMD_ECHO                        (0x13)      // send back the received packet
 
+#define CMD_SET_TEMP_ROT                (0x17)
 #define CMD_ROTATE_REF_GLOBAL           (0x18)      //
 #define CMD_ROTATE_REF_LOCAL            (0x19)      //
 #define CMD_SET_REGULATOR_OFFSETS       (0x20)      // Set PID offsets
@@ -112,6 +113,8 @@
 
 #define CMD_SET_TELEM_SUBSAMPLE         (0x52)      // Telemetry subsampling divider
 #define CMD_SET_SLEW_LIMIT              (0x53)      // Reference slew limiting
+
+#define CMD_TOGGLE_STREAMING            (0x54)      // Toggle telemetry streaming
 
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use

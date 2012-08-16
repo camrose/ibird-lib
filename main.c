@@ -174,13 +174,14 @@ void setupAll(void) {
 
     sclockSetup();                          // System clock
     batSetup();                             // Battery monitor
-    batSetCallback(&batteryLowCallback);    // Set battery event callback    
+    batSetCallback(&batteryLowCallback);    // Set battery event callback
+    ppoolInit();
     // Set up peripherals
     // Note: OV7660 I2C operates at 100 kHz on the same bus
     // as the accelerometer. Make sure to set up camera module first!
     dfmemSetup();                           // Flash memory device
     //camSetup(cam_frames, NUM_CAM_FRAMES);   // Camera device
-    xlSetup();    
+    xlSetup();
     xlSetRange(16);                         // +- 16 g range
     xlSetOutputRate(0, 0x0c);               // 800 Hz
     gyroSetup();
@@ -188,7 +189,7 @@ void setupAll(void) {
     
     LED_GREEN = 1; // CPU, sensors initialization clear
     
-    setRandomSeed();                // Seeds random number generation using IMU sensors        
+    setRandomSeed();                // Seeds random number generation using IMU sensors
     cmdSetup(RADIO_RX_QUEUE_SIZE);  // Command packet processing module
     radioInit(RADIO_TX_QUEUE_SIZE, RADIO_RX_QUEUE_SIZE);    
     setupTimer6(RADIO_FCY); // Radio and buffer loop timer
@@ -218,10 +219,12 @@ void setupAll(void) {
     LED_RED = 0;
     LED_GREEN = 0;
     LED_ORANGE = 0;
-    
+
+    DisableIntT6;
     //camStart();     // Start camera capture
     attStart();     // Start attitude estimation 
     EnableIntT5;    // Start control loop
+    EnableIntT6;
 
     radioSetWatchdogState(1);
     radioSetWatchdogTime(400);

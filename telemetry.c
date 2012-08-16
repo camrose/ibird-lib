@@ -66,9 +66,9 @@ typedef enum {
 } TelemStatus;
 
 // =========== Static Variables ================================================
-static unsigned char is_ready = 0;
+static unsigned char is_ready = 0, is_streaming = 0;
 static TelemStatus status = TELEM_IDLE;
-static unsigned int iter_num, subsample_period;
+static unsigned int iter_num, subsample_period, stream_addr;
 
 static PoolBuffStruct telem_buff;
 static TelemetryDatapoint datapoints[TELEM_BUFF_SIZE];
@@ -102,11 +102,21 @@ void telemSetup(void) {
     subsample_period = DEFAULT_SUBSAMPLE;
     
     is_ready = 1;
+    is_streaming = 0;
 
 }
 
 void telemSetSubsampleRate(unsigned int rate) {
     subsample_period = rate;
+}
+
+void telemToggleStreaming(unsigned int addr) {
+    if(is_streaming) {
+        is_streaming = 0;
+    } else {
+        is_streaming = 1;
+        stream_addr = addr;
+    }
 }
 
 void telemStartLogging(void) {
@@ -139,6 +149,8 @@ void telemStopLogging(void) {
     
 }
 
+
+
 void telemLog(void) {
 
     TelemetryDatapoint *data;
@@ -157,8 +169,6 @@ void telemLog(void) {
     //(&radio_stat);
     //data->ED = radio_stat.last_ed;
     //data->RSSI = radio_stat.last_rssi;
-    data->ED = 0;
-    data->RSSI = 0;
     pbuffAddActive(&telem_buff, data); // Queue data
 
 }
@@ -169,6 +179,11 @@ void telemProcess(void) {
     TelemetryDatapoint *data;
 
     if(!is_ready) { return; }
+
+    if (is_streaming) {
+        telemSendB(stream_addr);
+    }
+
     if(mem_page_pos >= mem_geo.max_pages) { telemStopLogging(); }
     if(status != TELEM_LOGGING) { return; }
     

@@ -110,6 +110,7 @@ static void cmdRotateRefLocal(MacPacket packet);
 static void cmdSetRegulatorOffsets(MacPacket packet);
 static void cmdSetRegulatorMode(MacPacket packet);
 static void cmdSetRegulatorRef(MacPacket packet);
+static void cmdSetRegulatorTempRotation(MacPacket packet);
 static void cmdSetRegulatorPid(MacPacket packet);
 static void cmdSetRegulatorRateFilter(MacPacket packet);
 static void cmdSetRemoteControlValues(MacPacket packet);
@@ -143,6 +144,8 @@ static void cmdResponseAttitude(MacPacket packet);
 
 static void cmdSetTelemSubsample(MacPacket packet);
 static void cmdSetSlewLimit(MacPacket packet);
+
+static void cmdToggleStreaming(MacPacket packet);
 
 static void cmdEcho(MacPacket packet);
 static void cmdNop(MacPacket packet);
@@ -180,6 +183,7 @@ unsigned int cmdSetup(unsigned int queue_size) {
 
     cmd_func[CMD_ROTATE_REF_GLOBAL] = &cmdRotateRefGlobal;
     cmd_func[CMD_ROTATE_REF_LOCAL] = &cmdRotateRefLocal;
+    cmd_func[CMD_SET_TEMP_ROT] = &cmdSetRegulatorTempRotation;
     cmd_func[CMD_SET_REGULATOR_OFFSETS] = &cmdSetRegulatorOffsets;
     cmd_func[CMD_SET_REGULATOR_MODE] = &cmdSetRegulatorMode;
     cmd_func[CMD_SET_REGULATOR_REF] = &cmdSetRegulatorRef;
@@ -214,6 +218,8 @@ unsigned int cmdSetup(unsigned int queue_size) {
     
     cmd_func[CMD_SET_TELEM_SUBSAMPLE] = &cmdSetTelemSubsample;
     cmd_func[CMD_SET_SLEW_LIMIT] = &cmdSetSlewLimit;
+
+    cmd_func[CMD_TOGGLE_STREAMING] = &cmdToggleStreaming;
     
     return 1;
     
@@ -423,6 +429,14 @@ static void cmdSetRegulatorRef(MacPacket packet) {
     
 }
 
+static void cmdSetRegulatorTempRotation(MacPacket packet) {
+
+    Quaternion *rot = payGetData(macGetPayload(packet));
+
+    rgltrSetTempRot(rot);
+
+}
+
 static void cmdSetRegulatorPid(MacPacket packet) {
         
     Payload pld;
@@ -619,6 +633,12 @@ static void cmdSetEstimateRunning(MacPacket packet) {
     }
 }
 
+static void cmdToggleStreaming(MacPacket packet) {
+    
+    telemToggleStreaming(macGetSrcAddr(packet));
+    
+}
+
 // ====== Camera and Vision ===================================================
 // TODO: Use a struct to simplify the packetization
 static void cmdRequestRawFrame(MacPacket packet) {
@@ -772,8 +792,8 @@ static void cmdCamParamResponse(MacPacket packet) {
 static void cmdZeroEstimate(MacPacket packet) {
 
     attReset();
-    xlReadXYZ();
-    attZero();
+    //xlReadXYZ();
+    //attZero();
 
 }
 

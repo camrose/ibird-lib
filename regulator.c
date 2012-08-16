@@ -102,11 +102,11 @@ CtrlPidParamStruct yawPid, pitchPid, thrustPid;
 DigitalFilterStruct yawRateFilter, pitchRateFilter, rollRateFilter;
 
 // State info
-static unsigned char is_ready = 0, is_logging = 0; 
+static unsigned char is_ready = 0, is_logging = 0, temp_rot_active = 0;
 static unsigned char yaw_filter_ready = 0, pitch_filter_ready = 0, roll_filter_ready = 0;
 static RegulatorMode reg_mode;
 static RegulatorOutput rc_outputs;
-static Quaternion reference, limited_reference, pose;
+static Quaternion reference, limited_reference, pose, temp_rot;
 
 // Telemetry buffering
 static RegulatorStateStruct reg_states[2];
@@ -162,7 +162,7 @@ void rgltrSetup(float ts) {
     limited_reference.z = 0.0;   
     
     is_logging = 0;
-    is_ready = 1;    
+    is_ready = 1;
     
 }
 
@@ -284,6 +284,12 @@ void rgltrSetQuatRef(Quaternion *ref) {
     quatCopy(&reference, ref);
 }
 
+void rgltrSetTempRot(Quaternion *rot) {
+    if(rot == NULL) { return; }
+    quatCopy(&temp_rot, rot);
+    temp_rot_active = 1;
+}
+
 void rgltrSetRemoteControlValues(float thrust, float steer, float elevator) {
     rc_outputs.thrust = thrust;
     rc_outputs.steer = steer;
@@ -331,7 +337,6 @@ void rgltrRunController(void) {
     if(is_logging) {
         logTrace(&error, &output);
     }
-
 }
 
 
@@ -339,12 +344,22 @@ void rgltrRunController(void) {
 
 static float runYawControl(float yaw) {
 
+    /*float u;
+
+    u = yawPid.offset;
+
+    if (u > yawPid.umax) {
+        u = yawPid.umax;
+    } else if (u < yawPid.umin) {
+        u = yawPid.umin;
+    }
+
+    return u;*/
     if(yaw_filter_ready) {
-        return ctrlRunPid(&yawPid, yaw, &yawRateFilter);
+       return ctrlRunPid(&yawPid, yaw, &yawRateFilter);
     } else {
         return ctrlRunPid(&yawPid, yaw, NULL);
     }
-
 }
 
 
@@ -373,7 +388,11 @@ static void calculateError(RegulatorError *error) {
     Quaternion conj_quat, err_quat;
     bams16_t a_2;
     float scale;
-    
+
+    if (temp_rot_active == 1) {
+        quatMult(&temp_rot, &limited_reference, &limited_reference);
+        quatNormalize(&limited_reference);
+    }
     // qref = qpose*qerr
     // qpose'*qref = qerr
     quatConj(&pose, &conj_quat);
