@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2011, Regents of the University of California
+ * Copyright (c) 2010-2012, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,10 +42,15 @@
  * To do:
  *	
  */
+
+#include <stdio.h>
 #include "cam.h"
 #include "telemetry.h"
+#include "cmd.h"
 #include "cmd_const.h"
 #include "radio.h"
+#include "rate.h"
+#include "lstrobe.h"
 #include "net.h"
 #include "dfmem.h"
 #include "utils.h"
@@ -55,7 +60,6 @@
 #include "clock_sync.h"
 #include "sys_clock.h"
 #include "led.h"
-#include "lstrobe.h"
 #include "motor_ctrl.h"
 #include "payload.h"
 #include "attitude.h"
@@ -63,54 +67,11 @@
 #include "mac_packet.h"
 #include "cv.h"
 #include "directory.h"
-#include "behavior.h"
 #include "carray.h"
-#include <stdio.h>
+#include "slew.h"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-
-#define MEM_PAGES               (100)
-#define MEM_PAGESIZE            (264)
-#define MEM_DATAPOINT_SIZE      (22)
-#define MEM_TELEM_DATAPOINT     (22)
-
-#define DS_IMAGE_COLS           (30) // NATIVE_IMAGE_COLS/DS_COL_PERIOD
-#define DS_IMAGE_ROWS           (30) // NATIVE_IMAGE_ROWS/DS_ROW_PERIOD
-
-typedef union {
-    struct {                                // Total: 22
-        unsigned long gyro_timestamp;       // (4)
-        unsigned long xl_timestamp;         // (4)        
-        unsigned char gyro[3*sizeof(int)];  // 2*3 = (6)
-        unsigned char xl[3*sizeof(int)];    // 2*3 = (6)
-        unsigned int sample;                // (2)        
-    };
-    unsigned char contents[MEM_DATAPOINT_SIZE];
-} Datapoint;
-
-#define MEM_TELEMETRY_SIZE      (20)
-
-typedef union {             // (20)
-    struct {
-        float pitch;        // (4)
-        float roll;         // (4)
-        float yaw;          // (4)
-        float yaw_ref;      // (4)
-        float pitch_ref;    // (4)
-    };
-    unsigned char contents[MEM_TELEMETRY_SIZE];
-} TelemetryPoint;
-
-typedef union {
-    struct {
-        TelemetryStructB telem;               // (10)
-        unsigned long xl_timestamp;         // (4)
-        unsigned char xl[3*sizeof(int)];    // 2*3 = (6)
-        unsigned int sample;                // (2)
-    };
-    unsigned char contents[MEM_TELEM_DATAPOINT];
-} TelemDatapoint;
 
 typedef union {
     float fval;
@@ -144,11 +105,18 @@ static void cmdDirDumpResponse(MacPacket packet);
 static void cmdRequestClockUpdate(MacPacket packet);
 static void cmdResponseClockUpdate(MacPacket packet);
 
+static void cmdRotateRefGlobal(MacPacket packet);
+static void cmdRotateRefLocal(MacPacket packet);
+static void cmdSetRegulatorOffsets(MacPacket packet);
 static void cmdSetRegulatorMode(MacPacket packet);
 static void cmdSetRegulatorRef(MacPacket packet);
+static void cmdSetRegulatorTempRotation(MacPacket packet);
 static void cmdSetRegulatorPid(MacPacket packet);
 static void cmdSetRegulatorRateFilter(MacPacket packet);
 static void cmdSetRemoteControlValues(MacPacket packet);
+
+static void cmdSetRateMode(MacPacket packet);
+static void cmdSetRateSlew(MacPacket packet);
 
 static void cmdRequestRawFrame(MacPacket packet);
 static void cmdResponseRawFrame(MacPacket packet);
@@ -160,7 +128,7 @@ static void cmdRequestTelemetry(MacPacket packet);
 static void cmdResponseTelemetry(MacPacket packet);
 static void cmdRecordTelemetry(MacPacket packet);
 
-static void cmdRecordSensorDump(MacPacket packet);
+static void cmdSetLogging(MacPacket packet);
 static void cmdGetMemContents(MacPacket packet);
 
 static void cmdRunGyroCalib(MacPacket packet);
@@ -168,11 +136,16 @@ static void cmdGetGyroCalibParam(MacPacket packet);
 
 static void cmdSetEstimateRunning(MacPacket packet);
 
-//static void cmdSetHP(MacPacket packet);
+static void cmdSetHP(MacPacket packet);
 
 static void cmdZeroEstimate(MacPacket packet);
 static void cmdRequestAttitude(MacPacket packet);
 static void cmdResponseAttitude(MacPacket packet);
+
+static void cmdSetTelemSubsample(MacPacket packet);
+static void cmdSetSlewLimit(MacPacket packet);
+
+static void cmdToggleStreaming(MacPacket packet);
 
 static void cmdEcho(MacPacket packet);
 static void cmdNop(MacPacket packet);
@@ -208,11 +181,18 @@ unsigned int cmdSetup(unsigned int queue_size) {
 
     cmd_func[CMD_ECHO] = &cmdEcho;
 
-    cmd_func[CMD_SET_REGULATOR_STATE] = &cmdSetRegulatorMode;
+    cmd_func[CMD_ROTATE_REF_GLOBAL] = &cmdRotateRefGlobal;
+    cmd_func[CMD_ROTATE_REF_LOCAL] = &cmdRotateRefLocal;
+    cmd_func[CMD_SET_TEMP_ROT] = &cmdSetRegulatorTempRotation;
+    cmd_func[CMD_SET_REGULATOR_OFFSETS] = &cmdSetRegulatorOffsets;
+    cmd_func[CMD_SET_REGULATOR_MODE] = &cmdSetRegulatorMode;
     cmd_func[CMD_SET_REGULATOR_REF] = &cmdSetRegulatorRef;
     cmd_func[CMD_SET_REGULATOR_PID] = &cmdSetRegulatorPid;
     cmd_func[CMD_SET_REGULATOR_RATE_FILTER] = &cmdSetRegulatorRateFilter;
-    
+
+    cmd_func[CMD_SET_RATE_MODE] = &cmdSetRateMode;
+    cmd_func[CMD_SET_RATE_SLEW] = &cmdSetRateSlew;
+
     cmd_func[CMD_RAW_FRAME_REQUEST] = &cmdRequestRawFrame;
     cmd_func[CMD_RAW_FRAME_RESPONSE] = &cmdResponseRawFrame;
     cmd_func[CMD_SET_BACKGROUND_FRAME] = &cmdSetBackgroundFrame;
@@ -225,26 +205,25 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_REQUEST_TELEMETRY] = &cmdRequestTelemetry;
     cmd_func[CMD_RESPONSE_TELEMETRY] = &cmdResponseTelemetry;
 
-    cmd_func[CMD_RECORD_SENSOR_DUMP] = &cmdRecordSensorDump;
+    cmd_func[CMD_RECORD_SENSOR_DUMP] = &cmdSetLogging;
     cmd_func[CMD_GET_MEM_CONTENTS] = &cmdGetMemContents;
     cmd_func[CMD_RUN_GYRO_CALIB] = &cmdRunGyroCalib;
     cmd_func[CMD_GET_GYRO_CALIB_PARAM] = &cmdGetGyroCalibParam;
 
-    //cmd_func[CMD_SET_HP] = &cmdSetHP;
+    cmd_func[CMD_SET_HP] = &cmdSetHP;
     
     cmd_func[CMD_ZERO_ESTIMATE] = &cmdZeroEstimate;
-    //cmd_func[CMD_REQUEST_ATTITUDE] = &cmdRequestAttitude;
-    //cmd_func[CMD_RESPONSE_ATTITUDE] = &cmdResponseAttitude;
+    cmd_func[CMD_REQUEST_ATTITUDE] = &cmdRequestAttitude;
+    cmd_func[CMD_RESPONSE_ATTITUDE] = &cmdResponseAttitude;
+    
+    cmd_func[CMD_SET_TELEM_SUBSAMPLE] = &cmdSetTelemSubsample;
+    cmd_func[CMD_SET_SLEW_LIMIT] = &cmdSetSlewLimit;
+
+    cmd_func[CMD_TOGGLE_STREAMING] = &cmdToggleStreaming;
     
     return 1;
     
 }
-
-/*void cmdSetHP(MacPacket packet) {
-
-    cvSetHP();
-
-}*/
 
 unsigned int cmdQueuePacket(MacPacket packet) {
 
@@ -262,10 +241,11 @@ void cmdProcessBuffer(void) {
     //packet = radioDequeueRxPacket();
     packet = carrayPopTail(input_queue);
     if(packet == NULL) { 
-		return;
-	} else {
-		Nop();
-	}
+        return;
+    } else {
+        Nop();
+        Nop();
+    }
 
     pld = macGetPayload(packet);
     command = payGetType(pld);
@@ -410,28 +390,51 @@ static void cmdResponseClockUpdate(MacPacket packet) {
 }
 
 // ====== Regulator and Control ===============================================
+static void cmdRotateRefGlobal(MacPacket packet) {
+    
+    Quaternion *rot = payGetData(macGetPayload(packet));
+    
+    rateApplyGlobalRotation(rot);
+    
+}
+
+static void cmdRotateRefLocal(MacPacket packet) {
+    
+    Quaternion *rot = payGetData(macGetPayload(packet));
+        
+    rateApplyLocalRotation(rot);
+
+}
+
+static void cmdSetRegulatorOffsets(MacPacket packet) {
+
+    float* frame = payGetData(macGetPayload(packet)); 
+    rgltrSetOffsets(frame);
+
+}
 
 static void cmdSetRegulatorMode(MacPacket packet) {
-    
-    Payload pld = macGetPayload(packet);
-    //unsigned char status = payGetStatus(pld);
-    unsigned char* frame = payGetData(pld);
-    
-    unsigned char flag = frame[0];
-
-    rgltrSetState(flag);
+        
+    unsigned char* frame = payGetData(macGetPayload(packet));       
+    rgltrSetMode(frame[0]);
     
 }
 
 static void cmdSetRegulatorRef(MacPacket packet) {
 
     Payload pld = macGetPayload(packet);
-    float* frame = (float*)payGetData(pld);
-
-    rgltrSetYawRef(frame[0]);
-    rgltrSetPitchRef(frame[1]);
-    rgltrSetRollRef(frame[2]);
+    Quaternion *ref = (Quaternion*)payGetData(pld);
     
+    rgltrSetQuatRef(ref);
+    
+}
+
+static void cmdSetRegulatorTempRotation(MacPacket packet) {
+
+    Quaternion *rot = payGetData(macGetPayload(packet));
+
+    rgltrSetTempRot(rot);
+
 }
 
 static void cmdSetRegulatorPid(MacPacket packet) {
@@ -453,24 +456,20 @@ static void cmdSetRegulatorPid(MacPacket packet) {
 static void cmdSetRegulatorRateFilter(MacPacket packet) {
     
     Payload pld;
-    unsigned char* frame, i, j;
-    RateFilterParamsStruct params[3];
+    unsigned int *frame;
+    RateFilterParamsStruct params;
 
     pld = macGetPayload(packet);
-    frame = payGetData(pld);
-    j = 0;
+    frame = (unsigned int*) payGetData(pld);
+
+    params.order = frame[0];
+    params.type = frame[1];
+    params.xcoeffs = frame + 2; // Order + 1 floats per array;
+    params.ycoeffs = params.xcoeffs + (params.order + 1); // Typed pointer magic
     
-    for(i = 0; i < 3; i++) {
-        params[i].order = frame[j++];
-        params[i].type = frame[j++];
-        params[i].xcoeffs = (float*) (frame + j); // Order + 1 floats per array
-        params[i].ycoeffs = params[i].xcoeffs + sizeof(float)*(params[i].order + 1);
-        j += 2*sizeof(float)*(params[i].order + 1);
-    }
-    
-    rgltrSetYawRateFilter(&params[0]);
-    rgltrSetPitchRateFilter(&params[1]);
-    rgltrSetRollRateFilter(&params[2]);
+    rgltrSetYawRateFilter(&params);
+    rgltrSetPitchRateFilter(&params);
+    rgltrSetRollRateFilter(&params);
     
 }
   
@@ -484,71 +483,42 @@ static void cmdSetRemoteControlValues(MacPacket packet) {
 
 }
 
-// ====== Telemetry and Sensors ===============================================
-static void cmdRecordSensorDump(MacPacket packet) {
+static void cmdSetRateMode(MacPacket packet) {
 
-    Payload pld;
-    unsigned char *frame;
-    Datapoint data;
-    unsigned int samples, mem_byte, mem_page, count, max_page, sector;
-    unsigned long next_sample_time, current_time;
-    static unsigned char buf_index = 1;
-        
+    Payload pld = macGetPayload(packet);
+    unsigned char flag = *(payGetData(pld));
+
+    if(flag == 0) {
+        rateDisable();
+    } else if(flag == 1) {
+        rateEnable();
+    }
+
+}
+
+static void cmdSetRateSlew(MacPacket packet) {
+
+    Payload pld = macGetPayload(packet);
+    Rate slew = (Rate)payGetData(pld);
+    rateSetGlobalSlew(slew);
+
+}
+
+// ====== Telemetry and Sensors ===============================================
+static void cmdSetLogging(MacPacket packet) {
+
+    Payload pld;    
+    unsigned char *frame, flag;
+
     pld = macGetPayload(packet);
     frame = payGetData(pld);
+    flag = frame[0];
 
-    samples = frame[0] + (frame[1] << 8);
-    count = samples;
-    next_sample_time = 0; 
-   
-    mem_byte = 0;
-    mem_page = 0x080; 
-    max_page = mem_page + (unsigned int) ceil(samples/22.0);
-    sector = mem_page;
-
-    // Erase as many memory sectors as needed
-    LED_RED = 1;
-    while (sector < max_page) {
-        dfmemEraseSector(sector);
-        sector += 0x80;
+    if(flag) {
+        telemStartLogging();
+    } else {
+        telemStopLogging();
     }
-    LED_RED = 0;
-
-    // Dump sensor data to memory
-    LED_ORANGE = 1;
-    
-    next_sample_time = 0;
-    do {
-        current_time = sclockGetGlobalTicks();
-        if (current_time > next_sample_time) {
-
-            // NEW CODE
-            data.sample = samples - count;
-            
-            // Read gyro values
-            gyroGetXYZ(data.gyro);
-            data.gyro_timestamp = sclockGetGlobalTicks();
-            
-            // Read accelerometer values
-            xlGetXYZ(data.xl);
-            data.xl_timestamp = sclockGetGlobalTicks();
-               
-            // Send datapoint to memory buffer
-            dfmemWriteBuffer(data.contents, MEM_DATAPOINT_SIZE, mem_byte, buf_index);
-            mem_byte += MEM_DATAPOINT_SIZE;
-
-            // If buffer full, write it to memory 
-            if (mem_byte + MEM_DATAPOINT_SIZE > MEM_PAGESIZE) { 
-                dfmemWriteBuffer2MemoryNoErase(mem_page++, buf_index);
-                buf_index ^= 0x01;  // toggle between buffer 0 and 1                
-                mem_byte = 0; 
-            }
-
-            next_sample_time = next_sample_time + 1000;
-            count--;
-        }
-    } while (count);
-    LED_ORANGE = 0;
 
 }
 
@@ -557,43 +527,38 @@ static void cmdGetMemContents(MacPacket packet) {
     Payload pld;
     MacPacket data_packet;
     unsigned char *frame;
+    DfmemGeometryStruct geo;
 
     pld = macGetPayload(packet);
     frame = payGetData(pld);
+    dfmemGetGeometryParams(&geo);
 
     unsigned int start_page = frame[0] + (frame[1] << 8);
     unsigned int end_page = frame[2] + (frame[3] << 8);
     unsigned int tx_data_size = frame[4] + (frame[5] << 8);
     unsigned int page, j;
     unsigned char count = 0;
-
-    LED_ORANGE = 0;
-    LED_GREEN = 1; // Signal start of transfer
-    LED_RED = 0;
     
     // Send back memory contents
     for (page = start_page; page < end_page; ++page) {
         j = 0;
-        while (j + tx_data_size <= MEM_PAGESIZE) {            
-            data_packet = radioRequestPacket(tx_data_size);
-            if(data_packet == NULL) {                
-                continue;
+        while (j + tx_data_size <= geo.bytes_per_page) {
+            data_packet = NULL;
+            while(data_packet == NULL) {
+                data_packet = radioRequestPacket(tx_data_size);
             }
+
             macSetDestAddr(data_packet, 0x1020);
-            macSetDestPan(data_packet, 0x1001);
+            macSetDestPan(data_packet, 0x1005);
             pld = macGetPayload(data_packet);
 
             dfmemRead(page, j, tx_data_size, payGetData(pld));
 
             paySetStatus(pld, count++);
-            paySetType(pld, CMD_GET_MEM_CONTENTS);
+            paySetType(pld, CMD_RESPONSE_TELEMETRY);
             while(!radioEnqueueTxPacket(data_packet));
             j += tx_data_size;
-        }
-
-        if ((page >> 7) & 0x1) {
-            LED_ORANGE = ~LED_ORANGE;
-            LED_GREEN = ~LED_GREEN;
+            delay_ms(20);
         }
 
     }
@@ -606,11 +571,13 @@ static void cmdGetMemContents(MacPacket packet) {
 static void cmdRunGyroCalib(MacPacket packet) {
     
     Payload pld = macGetPayload(packet);
-    unsigned char status = payGetStatus(pld);
     unsigned int* frame = (unsigned int*) payGetData(pld);
     
-    unsigned int count = frame[0];    
-    gyroRunCalib(count);    
+    unsigned int count = frame[0];
+
+    radioSetWatchdogState(0);
+    gyroRunCalib(count);
+    radioSetWatchdogState(1);
 
 }
 
@@ -636,70 +603,7 @@ static void cmdGetGyroCalibParam(MacPacket packet) {
 
 static void cmdRecordTelemetry(MacPacket packet) {
 
-    Payload pld;
-    unsigned char *frame;
-    TelemDatapoint data;
-    unsigned int samples, mem_byte, mem_page, count, max_page, sector;
-    unsigned long next_sample_time, current_time;
-    static unsigned char buf_index = 1;
-
-    pld = macGetPayload(packet);
-    frame = payGetData(pld);
-
-    samples = frame[0] + (frame[1] << 8);
-    count = samples;
-    next_sample_time = 0;
-
-    mem_byte = 0;
-    mem_page = 0x080;
-    max_page = mem_page + (unsigned int) ceil(samples/22.0);
-    sector = mem_page;
-
-    // Erase as many memory sectors as needed
-    LED_RED = 1;
-    while (sector < max_page) {
-        dfmemEraseSector(sector);
-        sector += 0x80;
-    }
-    LED_RED = 0;
-
-    // Dump sensor data to memory
-    LED_ORANGE = 1;
-
-    next_sample_time = 0;
-    do {
-        current_time = sclockGetGlobalTicks();
-        if (current_time > next_sample_time) {
-
-            // NEW CODE
-            data.sample = samples - count;
-
-            // Read telemetry values
-            data.telem.time = sclockGetGlobalTicks();
-            data.telem.pose[0] = attGetYawBAMS();
-            data.telem.pose[1] = attGetPitchBAMS();
-            data.telem.pose[2] = attGetRollBAMS();
-
-            // Read accelerometer values
-            xlGetXYZ(data.xl);
-            data.xl_timestamp = sclockGetGlobalTicks();
-
-            // Send datapoint to memory buffer
-            dfmemWriteBuffer(data.contents, MEM_TELEM_DATAPOINT, mem_byte, buf_index);
-            mem_byte += MEM_TELEM_DATAPOINT;
-
-            // If buffer full, write it to memory
-            if (mem_byte + MEM_TELEM_DATAPOINT > MEM_PAGESIZE) {
-                dfmemWriteBuffer2MemoryNoErase(mem_page++, buf_index);
-                buf_index ^= 0x01;  // toggle between buffer 0 and 1
-                mem_byte = 0;
-            }
-
-            next_sample_time = next_sample_time + 1000;
-            count--;
-        }
-    } while (count);
-    LED_ORANGE = 0;
+    
 
 }
 
@@ -729,6 +633,12 @@ static void cmdSetEstimateRunning(MacPacket packet) {
     }
 }
 
+static void cmdToggleStreaming(MacPacket packet) {
+    
+    telemToggleStreaming(macGetSrcAddr(packet));
+    
+}
+
 // ====== Camera and Vision ===================================================
 // TODO: Use a struct to simplify the packetization
 static void cmdRequestRawFrame(MacPacket packet) {
@@ -739,7 +649,7 @@ static void cmdRequestRawFrame(MacPacket packet) {
     Payload pld;
     CamFrame frame;
     CamRow *row;
-    FrameInfoStruct info;
+    CvResultStruct info;
 
     srcAddr = macGetSrcAddr(packet);
     srcPan = macGetSrcPan(packet);    
@@ -755,7 +665,7 @@ static void cmdRequestRawFrame(MacPacket packet) {
     width = DS_IMAGE_COLS;
 
     for(i = 0; i < height; i++) {        
-        row = &(frame->rows[i]);
+        row = &(frame->pixels[i]);
         to_send = width;
         while(to_send > 0) {            
             response = radioRequestPacket(block_size + 6);
@@ -782,7 +692,7 @@ static void cmdRequestRawFrame(MacPacket packet) {
 
     }
     sent = 0;
-    while(!sent) {        
+    while(!sent) {
         response = radioRequestPacket(10);
         if(response == NULL) { continue; }
         pld = macGetPayload(response);
@@ -828,7 +738,7 @@ static void cmdSetBackgroundFrame(MacPacket packet) {
 
 static void cmdCamParamRequest(MacPacket packet) {
 
-    /*Payload pld;
+    Payload pld;
     CamParamStruct params;
     MacPacket response;
     
@@ -844,14 +754,14 @@ static void cmdCamParamRequest(MacPacket packet) {
     paySetStatus(pld, 0);
     paySetData(pld, sizeof(CamParamStruct), (unsigned char*)&params);
 
-    while(!radioEnqueueTxPacket(response));*/
+    while(!radioEnqueueTxPacket(response));
 
 
 }
 
 static void cmdCamParamResponse(MacPacket packet) {
 
-    /*Payload pld;
+    Payload pld;
     unsigned char *frame;
     CamParamStruct *params;
     LStrobeParamStruct lstrobe_params;
@@ -875,7 +785,7 @@ static void cmdCamParamResponse(MacPacket packet) {
     lstrobe_params.on_time = 625/4; // 1 ms
     lstrobe_params.off_time = lstrobe_params.period - lstrobe_params.on_time;
     lstrobeSetParam(&lstrobe_params);
-    lstrobeStart();*/
+    lstrobeStart();
     
 }
 
@@ -889,7 +799,7 @@ static void cmdZeroEstimate(MacPacket packet) {
 
 static void cmdRequestAttitude(MacPacket packet) {
 
-    telemSendB(macGetSrcAddr(packet));
+    telemSendAttitude(macGetSrcAddr(packet));
 
 }
 
@@ -898,6 +808,30 @@ static void cmdResponseAttitude(MacPacket packet) {
     // Write me!
     return;
 
+}
+
+void cmdSetHP(MacPacket packet) {
+
+    cvSetHP();
+
+}
+
+void cmdSetTelemSubsample(MacPacket packet) {
+    
+    unsigned int *data;
+    
+    data = (unsigned int*) payGetData(macGetPayload(packet));
+    telemSetSubsampleRate(*data);
+    
+}
+
+void cmdSetSlewLimit(MacPacket packet) {
+
+    float *data;
+
+    data = (float *) payGetData(macGetPayload(packet));
+    slewSetLimit(*data);
+    
 }
 
 /*-----------------------------------------------------------------------------

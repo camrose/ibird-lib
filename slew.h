@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2010 - 2012, Regents of the University of California
+* Copyright (c) 2012, Regents of the University of California
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -27,65 +27,43 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 *
-* PWM Motor Controller Drive
+* Reference Slew Limiter
 *
-* by Stanley S. Baek
+* by Humphrey Hu
 *
-* v 0.2
+* v.0.1
 *
-* Revisions:
-*   Stanley S. Baek     2010-05-30      Initial release
-*   Humphrey Hu         2012-06-30      Switched to +- 1.0 scale
+* Revisions: 
+*  Humphrey Hu		    2012-07-22       Initial implementation
 */
 
-#ifndef __MOTOR_CTRL_H
-#define __MOTOR_CTRL_H
+#ifndef __SLEW_H
+#define __SLEW_H
 
-#define MC_NUM_CHANNELS     (4)
-#define MC_CHANNEL_PWM1     (1)
-#define MC_CHANNEL_PWM2     (2)
-#define MC_CHANNEL_PWM3     (3)
-#define MC_CHANNEL_PWM4     (4)
+#include "quat.h"
+/**
+ * Initialize the slew rate limiter
+ * @param ts - Period in seconds
+ */
+void slewSetup(float ts);
 
-typedef enum {
-    MC_STEER_DISC = 0,
-    MC_STEER_CONT,
-} McSteerMode;
-
-#define MC_STEER_MODE_DISC  (0)   
-#define MC_STEER_MODE_CONT  (1)   
-
-#define MC_STEER_LEFT       (-1.0)
-#define MC_STEER_RIGHT      (1.0)
-#define MC_STEER_STRAIGHT   (0.0)
-
-// by default, all RE ports are output
-void mcSetup(void);
-
-// the resolution of the duty cycle is 1/(2*PTPER)
-void mcSetDutyCycle(unsigned char channel, float duty_cycle);
+/*
+ * Start/stop slew rate limiting
+ */
+void slewEnable(void);
+void slewDisable(void);
 
 /**
- * Stop all motor controller axes
+ * Set the slew rate limit
+ * @param rate - Limit in radians/second. 0.0 means unlimited.
  */
-void mcStop(void);
+void slewSetLimit(float rate);
 
 /**
- * Set the duty cycle on PWM1
- * @param value - Duty cycle in [0.0, 1.0]
+ * Apply limiting to a reference input
+ * @param input - Reference
+ * @param output - Rate-limited reference
  */
-void mcThrust(float value);
+void slewProcess(Quaternion *input, Quaternion *output);
 
-/**
- * Set the duty cycle and direction on PWM2 and PWM3's H-Bridge
- * @param value - Duty cycle in [-1.0, 1.0]
- */
-void mcSteer(float value);
-
-/**
- * Set the H-Bridge steering mode
- * @param mode - Steering mode flag
- */
-void mcSetSteerMode(McSteerMode mode);
-
-#endif  // __MOTOR_CTRL_H
+#endif

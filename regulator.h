@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2009 - 2010, Regents of the University of California
+/*
+ * Copyright (c) 2009 - 2012, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,18 +31,32 @@
  *
  * by Stanley S. Baek
  *
- * v.beta
+ * v.0.4
  *
  */
 
 #ifndef __REGULATOR_H
 #define __REGULATOR_H
 
+#include "quat.h"
+
 typedef enum {
     REG_OFF = 0,
     REG_TRACK,
     REG_REMOTE_CONTROL,
-} RegulatorState;
+} RegulatorMode;
+
+typedef struct {    
+    Quaternion ref;     // References (16)
+    Quaternion pose;    // Position (16)
+    Quaternion error;   // Error (16)
+    float u[3];         // Outputs (12)
+    unsigned long time; // Timestamp (4)
+    //float xl_data[3];   // Accel Data (12)
+    //unsigned char xl_data[3*sizeof(int)];
+} RegulatorStateStruct; // Total: 64 bytes
+
+typedef RegulatorStateStruct* RegulatorState;
 
 typedef struct {
     unsigned char order;
@@ -67,52 +81,60 @@ typedef PidParamsStruct *PidParams;
 
 /**
  * Set up regulator module
- *
  * @param ts - Execution period
  */
 void rgltrSetup(float ts);
 
 /**
- * Set regulator state
- *
+ * Set regulator mode
  * @param flag - State to transition to
  */
-void rgltrSetState(unsigned char flag);
+void rgltrSetMode(unsigned char flag);
+void rgltrSetOff(void);
+void rgltrSetTrack(void);
+void rgltrSetRemote(void);
+
+// Set 3 axes offsets
+void rgltrSetOffsets(float *offsets);
 
 /**
- * Set yaw filter parameters
- *
- * @param params - Yaw filter parameter struct
+ * Set rate filter parameters
+ * @param params - Yaw/pitch/roll filter parameter struct
  */
 void rgltrSetYawRateFilter(RateFilterParams params);
 void rgltrSetPitchRateFilter(RateFilterParams params);
 void rgltrSetRollRateFilter(RateFilterParams params);
 
 /**
- * Set yaw PID parameters
- *
- * @param params - Yaw PID parameter struct
+ * Set yaw/pitch/roll PID parameters
+ * @param params - Yaw/pitch/roll PID parameter struct
  */
 void rgltrSetYawPid(PidParams params);
 void rgltrSetPitchPid(PidParams params);
 void rgltrSetRollPid(PidParams params);
 
 /**
- * Set yaw reference value
- *
- * @param ref - Yaw reference in radians
+ * Set yaw/pitch/roll reference value
+ * @param ref - Yaw/pitch/roll reference in radians
  */
 void rgltrSetYawRef(float ref);
 void rgltrSetPitchRef(float ref);
 void rgltrSetRollRef(float ref);
 
 /**
- * Set remote control output values
- *
- * @param thrust - Thrust duty cycle from 0.0 to 100.0
- * @param steer - Steering duty cycle from -100.0 to 100.0
+ * Get/Set the quaternion reference
  */
-void rgltrSetRemoteControlValues(float thrust, float steer, float elev);
+void rgltrGetQuatRef(Quaternion *ref);
+void rgltrSetQuatRef(Quaternion *ref);
+void rgltrSetTempRot(Quaternion *rot);
+
+/**
+ * Set remote control output values
+ * @param thrust - Thrust duty cycle from 0.0 to 1.0
+ * @param steer - Steering duty cycle from -1.0 to 1.0
+ * @param elevator - Elevator position from -1.0 to 1.0
+ */
+void rgltrSetRemoteControlValues(float thrust, float steer, float elevator);
 
 /**
  * Execute control loop iteration. This method should be called regularly every
@@ -120,6 +142,16 @@ void rgltrSetRemoteControlValues(float thrust, float steer, float elev);
  * @see rgltrSetup
  */
 void rgltrRunController(void);
+
+/**
+ * Retrieve a logged regulator trace point
+ * @param state - Pointer to structure to populate
+ * @note 7000 cycles
+ */
+void rgltrGetState(RegulatorState state);
+void rgltrStartLogging(void);
+void rgltrStopLogging(void);
+
 
 #endif  // __REGULATOR_H
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Regents of the University of California
+ * Copyright (c) 2011-2012, Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,26 +45,167 @@
 #include "net.h"
 #include "mac_packet.h"
 #include "payload.h"
-#include "gyro.h"
-#include "xl.h"
 #include "regulator.h"
 #include "attitude.h"
-#include "behavior.h"
-#include "counter.h"
-
 #include "cmd_const.h"
+#include "dfmem.h"
+#include "led.h"
+#include "utils.h"
+#include "pbuff.h"
 
-// Function stubs
-void telemPopulateA(TelemetryStructA*); // Not yet implemented
-void telemPopulateB(TelemetryStructB*); 
+#include <string.h>
 
-// Function bodies
-// TODO: Implement!
-void telemSendA(unsigned int addr) {
+#define DEFAULT_START_PAGE      (0x80)
+#define TELEM_BUFF_SIZE         (5)
+#define DEFAULT_SUBSAMPLE       (1)
+
+typedef enum {
+    TELEM_IDLE = 0,
+    TELEM_LOGGING,
+    TELEM_ERROR,
+} TelemStatus;
+
+// =========== Static Variables ================================================
+static unsigned char is_ready = 0, is_streaming = 0;
+static TelemStatus status = TELEM_IDLE;
+static unsigned int iter_num, subsample_period, stream_addr;
+
+static PoolBuffStruct telem_buff;
+static TelemetryDatapoint datapoints[TELEM_BUFF_SIZE];
+
+static DfmemGeometryStruct mem_geo;
+static unsigned int mem_page_pos, mem_byte_pos, mem_buff_index;
+
+// =========== Function Stubs ==================================================
+void telemPopulateB(TelemetryB); 
+void telemPopulateAttitude(TelemetryAttitude);
+
+// =========== Public Methods ==================================================
+void telemSetup(void) {
+
+    unsigned int i;
+    TelemetryDatapoint *s[TELEM_BUFF_SIZE];
+
+    dfmemGetGeometryParams(&mem_geo); // Read memory chip sizing
+    mem_page_pos = DEFAULT_START_PAGE;    
+    mem_byte_pos = 0;
+    mem_buff_index = 0;    
+
+    for(i = 0; i < TELEM_BUFF_SIZE; i++) {
+        s[i] = &datapoints[i];
+    }
+
+    pbuffInit(&telem_buff, TELEM_BUFF_SIZE, (void**)s);
+    if(telem_buff.valid == 0) { return; }
+
+    iter_num = 0;
+    subsample_period = DEFAULT_SUBSAMPLE;
+    
+    is_ready = 1;
+    is_streaming = 0;
 
 }
 
-// TODO: Move mac packet creation from Radio_DMA to Mac_Packet
+void telemSetSubsampleRate(unsigned int rate) {
+    subsample_period = rate;
+}
+
+void telemToggleStreaming(unsigned int addr) {
+    if(is_streaming) {
+        is_streaming = 0;
+    } else {
+        is_streaming = 1;
+        stream_addr = addr;
+    }
+}
+
+void telemStartLogging(void) {
+
+    if(!is_ready) { return; }
+
+    mem_page_pos = DEFAULT_START_PAGE;
+    mem_byte_pos = 0;
+    mem_buff_index = 0;
+
+    dfmemEraseChip();
+//    unsigned int i;
+//    i = mem_page_pos;
+//    while(i < mem_geo.max_pages/4) {
+//        dfmemEraseSector(i);
+//        i += mem_geo.pages_per_sector;
+//    }
+    
+    while(!dfmemIsReady());
+    status = TELEM_LOGGING;
+    LED_RED = 1;
+
+}
+
+void telemStopLogging(void) {
+    
+    // TODO: Check for error condition
+    status = TELEM_IDLE;
+    LED_RED = 0;
+    
+}
+
+
+
+void telemLog(void) {
+
+    TelemetryDatapoint *data;
+    //RadioStatus radio_stat;
+    
+    if(!is_ready) { return; }
+    if(status != TELEM_LOGGING) { return; }
+    
+    iter_num++;    
+    if(iter_num % subsample_period != 0) { return; }
+    
+    data = pbuffGetIdle(&telem_buff);
+    if(data == NULL) { return; }
+    
+    rgltrGetState(&data->reg_state); // Fetch regulator data
+    //(&radio_stat);
+    //data->ED = radio_stat.last_ed;
+    //data->RSSI = radio_stat.last_rssi;
+    pbuffAddActive(&telem_buff, data); // Queue data
+
+}
+
+
+void telemProcess(void) {
+
+    TelemetryDatapoint *data;
+
+    if(!is_ready) { return; }
+
+    if (is_streaming) {
+        telemSendB(stream_addr);
+    }
+
+    if(mem_page_pos >= mem_geo.max_pages) { telemStopLogging(); }
+    if(status != TELEM_LOGGING) { return; }
+    
+    data = pbuffGetOldestActive(&telem_buff);
+    if(data == NULL) { return; }    
+    
+    dfmemWriteBuffer((unsigned char*)data, sizeof(TelemetryDatapoint), mem_byte_pos, mem_buff_index);
+    mem_byte_pos += sizeof(TelemetryDatapoint);
+    
+    if(mem_byte_pos + sizeof(TelemetryDatapoint) > mem_geo.bytes_per_page) {
+    
+        dfmemWriteBuffer2MemoryNoErase(mem_page_pos, mem_buff_index);
+        mem_buff_index ^= 0x01;
+        mem_byte_pos = 0;
+        mem_page_pos++;                
+        
+    }
+
+    pbuffReturn(&telem_buff, data);
+
+}
+
 void telemSendB(unsigned int addr) {
 
 	MacPacket packet;
@@ -84,24 +225,51 @@ void telemSendB(unsigned int addr) {
 	pld = macGetPayload(packet);
 	paySetType(pld, CMD_RESPONSE_TELEMETRY);
 	paySetData(pld, TELEMETRY_B_SIZE, (unsigned char *) &telemetryB);
-	 if(!radioEnqueueTxPacket(packet)) {
-		 radioReturnPacket(packet);	// Delete packet if append fails
-	 }
+	if(!radioEnqueueTxPacket(packet)) {
+		radioReturnPacket(packet);	// Delete packet if append fails
+	}
 	
 }
 
-void telemPopulateA(TelemetryStructA *telemetry) {
+void telemSendAttitude(unsigned int addr) {
+
+    MacPacket packet;
+	Payload pld;
+	TelemetryStructAttitude telemetryAtt;
+	
+	// Populate the telemetry fields
+	telemPopulateAttitude(&telemetryAtt);
+	
+	// Create a radio packet
+	packet = radioRequestPacket(TELEMETRY_ATT_SIZE);
+	if(packet == NULL) { return; }
+        macSetDestAddr(packet, addr);
+        macSetDestPan(packet, netGetLocalPanID());
+
+	// Write the telemetry struct into the packet payload
+	pld = macGetPayload(packet);
+	paySetType(pld, CMD_RESPONSE_ATTITUDE);
+	paySetData(pld, TELEMETRY_ATT_SIZE, (unsigned char *) &telemetryAtt);
+	if(!radioEnqueueTxPacket(packet)) {
+        radioReturnPacket(packet);	// Delete packet if append fails
+	}
+	
+}
+
+void telemPopulateB(TelemetryB telemetry) {	    
+
+    RegulatorStateStruct state;
+
+    rgltrGetState(&state);
+    memcpy(telemetry, &state, sizeof(RegulatorStateStruct));
 
 }
 
-void telemPopulateB(TelemetryStructB *telemetry) {	    
+void telemPopulateAttitude(TelemetryAttitude att) {
 
-    telemetry->time = sclockGetGlobalTicks();
-    telemetry->pose[0] = attGetYawBAMS();
-    telemetry->pose[1] = attGetPitchBAMS();
-    telemetry->pose[2] = attGetRollBAMS();
-    //gyroGetXYZ(telemetry->gyro);
+    Quaternion pose;
     
-    return;
-	
+    attGetQuat(&pose);
+    memcpy(att, &pose, sizeof(Quaternion));    
+
 }
