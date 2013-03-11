@@ -692,7 +692,7 @@ static void cmdRequestRawFrame(MacPacket packet) {
 
     }
     sent = 0;
-    while(!sent) {        
+    while(!sent) {
         response = radioRequestPacket(10);
         if(response == NULL) { continue; }
         pld = macGetPayload(response);

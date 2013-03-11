@@ -326,6 +326,7 @@ void rgltrRunController(void) {
     if(!is_ready) { return; }    
 
     attEstimatePose();  // Update attitude estimate
+
     rateProcess();      // Update limited_reference
     slewProcess(&reference, &limited_reference); // Apply slew rate limiting
 
@@ -383,16 +384,21 @@ static float runRollControl(float roll) {
 
 }
 
+static void applyTempRot(Quaternion *input, Quaternion *output) {
+    if (temp_rot_active == 1) {
+        quatMult(&temp_rot, input, output);
+        quatNormalize(output);
+    } else {
+        quatCopy(output, input);
+    }
+}
+
 static void calculateError(RegulatorError *error) {
 
     Quaternion conj_quat, err_quat;
     bams16_t a_2;
     float scale;
-
-    if (temp_rot_active == 1) {
-        quatMult(&temp_rot, &limited_reference, &limited_reference);
-        quatNormalize(&limited_reference);
-    }
+    
     // qref = qpose*qerr
     // qpose'*qref = qerr
     quatConj(&pose, &conj_quat);

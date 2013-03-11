@@ -54,7 +54,7 @@ typedef struct {
     unsigned long time; // Timestamp (4)
     //float xl_data[3];   // Accel Data (12)
     //unsigned char xl_data[3*sizeof(int)];
-} RegulatorStateStruct; // Total: 70 bytes
+} RegulatorStateStruct; // Total: 64 bytes
 
 typedef RegulatorStateStruct* RegulatorState;
 

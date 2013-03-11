@@ -181,9 +181,12 @@ void setupAll(void) {
     // as the accelerometer. Make sure to set up camera module first!
     dfmemSetup();                           // Flash memory device
     //camSetup(cam_frames, NUM_CAM_FRAMES);   // Camera device
+    
+    /* Accelerometer setup
     xlSetup();
     xlSetRange(16);                         // +- 16 g range
     xlSetOutputRate(0, 0x0c);               // 800 Hz
+    */
     gyroSetup();
     gyroSetDeadZone(25);
     
@@ -210,7 +213,7 @@ void setupAll(void) {
     rgltrSetOff();
     rgltrStartLogging();    
     setupTimer5(REGULATOR_FCY);     // Control loop timer
-    cvSetup();                      // Vision module
+    //cvSetup();                      // Vision module
 
     LED_RED = 1; // Third stage initialization clear
 

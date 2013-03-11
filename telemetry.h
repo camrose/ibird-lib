@@ -42,8 +42,8 @@
 
 typedef struct {
     RegulatorStateStruct reg_state;
-    unsigned char ED;
-    unsigned char RSSI;
+    //unsigned char ED;
+   // unsigned char RSSI;
 } TelemetryDatapoint;
  
 // State Telemetry Packet (Type B)
