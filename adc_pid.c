@@ -56,7 +56,7 @@ static void adcSetupPeripheral(void){
     AD1CON3value = ADC_CONV_CLK_SYSTEM & 	//Use System clock, not internal RC osc
 				   ADC_CONV_CLK_3Tcy & 		//Tad = 3 * Tcy
 				   ADC_SAMPLE_TIME_1; 		//Sample Time = 1*Tad
-	AD1CON4value = ADC_DMA_BUF_LOC_4; 		//This may be wrong (TODO)
+	AD1CON4value = ADC_DMA_BUF_LOC_1; 		//This may be wrong (TODO)
 	
     
 	AD1CHS123value = ADC_CH123_NEG_SAMPLEA_VREFN & 	// Sample A, Vref- = AVss
@@ -144,7 +144,7 @@ static void initDma0(void)
 	
 	DMA0PAD=(int)&ADC1BUF0;
 	//DMA0CNT = (SAMP_BUFF_SIZE*2)-1;					
-	DMA0CNT = 3;  //See dsPIC user's manual. 4 analog reads -> DMA0CNT = 4-1 = 3
+	DMA0CNT = 511;  //See dsPIC user's manual. 4 analog reads -> DMA0CNT = 4-1 = 3
 	//DMA0CNT = 7;
 
 	DMA0REQ=13; //ADC1 requests
