@@ -9,6 +9,7 @@
 #include "adc_pid.h"
 #include "p33Fxxxx.h"
 #include "ports.h"
+#include "dma.h"
 
 //Functions
 static void adcSetupPeripheral(void);
@@ -38,36 +39,18 @@ static void adcSetupPeripheral(void){
 	//		 Ch1 - AN0 then AN3
 	//ADC2 : Left unconfigured for user applications
 
-	AD1CON1value = ADC_MODULE_ON & 			//ADC module is enabled
-				   ADC_IDLE_CONTINUE & 		// ADC will continue in idle mode 
-                   ADC_AD12B_10BIT & 		// ADC in 10 bit mode
-				   ADC_FORMAT_INTG & 		// ADC in integer format (CLARIFY)
-				   ADC_CLK_MPWM & 			// MCPWM interval ends sampling and starts conversion
-                   ADC_SIMULTANEOUS & 		//Simultaneously sample CH0 and CH1
-				   ADC_ADDMABM_ORDER &		//DMA buffers are written in the order of conversion
-				   ADC_AUTO_SAMPLING_ON & 	//ADC does not need to be triggered manually
-				   ADC_SAMP_ON;				//sample / hold amplifiers are sampling  (maybe incorrect)
-    AD1CON2value = ADC_VREF_AVDD_AVSS & 	//Vref+ = AVdd , Vref- = AVss
-				   ADC_SCAN_OFF & 			//Do not scan through ADC channels
-				   ADC_SELECT_CHAN_01 & 	//Sample & convert 
-				   ADC_ALT_BUF_OFF &		//Use one 16 word buffer
-				   ADC_ALT_INPUT_ON & 		// Alternate between MUXA and MUXB
-				   ADC_DMA_ADD_INC_2;		//Increment DMA address after 2 samples, to account for alt. sampling
-    AD1CON3value = ADC_CONV_CLK_SYSTEM & 	//Use System clock, not internal RC osc
-				   ADC_CONV_CLK_3Tcy & 		//Tad = 3 * Tcy
-				   ADC_SAMPLE_TIME_1; 		//Sample Time = 1*Tad
-	AD1CON4value = ADC_DMA_BUF_LOC_4; 		//This may be wrong (TODO)
+	AD1CON1value = ADC_MODULE_ON & ADC_IDLE_STOP & ADC_ADDMABM_ORDER &
+                  ADC_AD12B_10BIT & ADC_FORMAT_INTG & ADC_CLK_MPWM &
+                  ADC_SIMULTANEOUS & ADC_AUTO_SAMPLING_ON & ADC_SAMP_ON;				//sample / hold amplifiers are sampling  (maybe incorrect)
+    AD1CON2value = ADC_VREF_AVDD_AVSS & ADC_SCAN_OFF & ADC_SELECT_CHAN_0 &
+                  ADC_DMA_ADD_INC_1 & ADC_ALT_BUF_OFF & ADC_ALT_INPUT_OFF;
+    AD1CON3value = ADC_CONV_CLK_SYSTEM & ADC_SAMPLE_TIME_1 & ADC_CONV_CLK_3Tcy;
+	AD1CON4value = ADC_DMA_BUF_LOC_1;
 	
     
-	AD1CHS123value = ADC_CH123_NEG_SAMPLEA_VREFN & 	// Sample A, Vref- = AVss
-					 ADC_CH123_POS_SAMPLEA_0_1_2 & 	// Sample A, CH1=AN0, CH2=AN1, CH3=AN2
-					 ADC_CH123_NEG_SAMPLEB_VREFN & 	// Sample B, Vref- = AVss
-					 ADC_CH123_POS_SAMPLEB_3_4_5;  	// Sample B, CH1=AN3, CH2=AN4, CH3=AN5
+	AD1CHS123value = 0x0000;
 
- 	AD1CHS0value = ADC_CH0_NEG_SAMPLEA_VREFN & 		// Sample A, Vref- = AVss
-				   ADC_CH0_POS_SAMPLEA_AN11 & 		// Sample A, CH0 = AN11
-				   ADC_CH0_NEG_SAMPLEB_VREFN & 		// Sample B, Vref- = AVss
-				   ADC_CH0_POS_SAMPLEB_AN1; 		// Sample A, CH0 = AN1
+ 	AD1CHS0value = ADC_CH0_NEG_SAMPLEA_VREFN & ADC_CH0_POS_SAMPLEA_AN11;
 					 
 
     AD1CSSHvalue = SCAN_NONE_16_31; 				//Skip AN16-AN131 for Input Scan
@@ -75,7 +58,7 @@ static void adcSetupPeripheral(void){
 
 	//Set pins to analog inputs; also check init_default.c
 	AD1PCFGHvalue = ENABLE_ALL_DIG_16_31; //Shouldn't matter, only AN0-15 on 706A
-    AD1PCFGLvalue = ENABLE_AN0_ANA & ENABLE_AN1_ANA & ENABLE_AN3_ANA & ENABLE_AN11_ANA;
+    AD1PCFGLvalue = ENABLE_AN11_ANA;
 	 
     SetChanADC1(AD1CHS123value, AD1CHS0value);
     OpenADC1(AD1CON1value, AD1CON2value, AD1CON3value, AD1CON4value, AD1PCFGLvalue, AD1PCFGHvalue, AD1CSSHvalue, AD1CSSLvalue);
@@ -144,9 +127,8 @@ static void initDma0(void)
 	
 	DMA0PAD=(int)&ADC1BUF0;
 	//DMA0CNT = (SAMP_BUFF_SIZE*2)-1;					
-	DMA0CNT = 3;  //See dsPIC user's manual. 4 analog reads -> DMA0CNT = 4-1 = 3
+	DMA0CNT = 511;  //See dsPIC user's manual. 4 analog reads -> DMA0CNT = 4-1 = 3
 	//DMA0CNT = 7;
-
 	DMA0REQ=13; //ADC1 requests
 
 	DMA0STA = __builtin_dmaoffset(BufferA);		

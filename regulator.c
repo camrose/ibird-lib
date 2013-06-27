@@ -515,8 +515,8 @@ void updateBEMF() {
     //Back EMF measurements are made automatically by coordination of the ADC, PWM, and DMA.
     //Copy to local variables. Not strictly neccesary, just for clarity.
     //This **REQUIRES** that the divider on the battery & BEMF circuits have the same ratio.
-    bemf[0] = adcGetVBatt() - adcGetBEMFL();
-    //bemf[0] = ADC1BUF0;
+    //bemf[0] = adcGetVBatt() - adcGetBEMFL();
+    bemf[0] = ADC1BUF0;
     bemf[1] = adcGetVBatt() - adcGetBEMFR();
     //NOTE: at this point, we should have a proper correspondance between
     //   the order of all the structured variable; bemf[i] associated with
