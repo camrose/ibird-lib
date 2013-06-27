@@ -61,6 +61,7 @@
 #include "xl.h"
 #include "rate.h"
 #include "slew.h"
+#include "adc_pid.h"
 
 // Hardware/actuator interface
 #include "motor_ctrl.h"
@@ -116,16 +117,26 @@ static PingPongBuffer reg_state_buff;
 static float runYawControl(float yaw);
 static float runPitchControl(float pitch);
 static float runRollControl(float roll);
+static void updateBEMF();
 
 static void calculateError(RegulatorError *error);
 static void filterError(RegulatorError *error);
 static void calculateOutputs(RegulatorError *error, RegulatorOutput *output);
 static void applyOutputs(RegulatorOutput *output);
 static void logTrace(RegulatorError *error, RegulatorOutput *output);
+
+// =========== Local Variables ===============================================
+
+int bemf[NUM_MOTOR_PIDS]; //used to store the true, unfiltered speed
+int bemfLast[NUM_MOTOR_PIDS]; // Last post-median-filter value
+int bemfHist[NUM_MOTOR_PIDS][3]; //This is ONLY for applying the median filter to
+int medianFilter3(int*);
+
 // =========== Public Functions ===============================================
 
 void rgltrSetup(float ts) {
-        
+    int i;
+    
     // Set up drivers
     servoSetup();
     mcSetup();
@@ -163,7 +174,13 @@ void rgltrSetup(float ts) {
     
     is_logging = 0;
     is_ready = 1;
-    
+
+    for (i = 0; i < NUM_MOTOR_PIDS; i++) {
+        bemfLast[i] = 0;
+        bemfHist[i][0] = 0;
+        bemfHist[i][1] = 0;
+        bemfHist[i][2] = 0;
+    }
 }
 
 void rgltrSetMode(unsigned char flag) {
@@ -326,7 +343,8 @@ void rgltrRunController(void) {
     if(!is_ready) { return; }    
 
     attEstimatePose();  // Update attitude estimate
-
+    updateBEMF();
+    
     rateProcess();      // Update limited_reference
     slewProcess(&reference, &limited_reference); // Apply slew rate limiting
 
@@ -467,6 +485,68 @@ static void applyOutputs(RegulatorOutput *output) {
 
 }
 
+//Poor implementation of a median filter for a 3-array of values
+
+int medianFilter3(int* a) {
+    int b[3] = {a[0], a[1], a[2]};
+    int temp;
+
+    //Implemented through 3 compare-exchange operations, increasing index
+    if (b[0] > b[1]) {
+        temp = b[1];
+        b[1] = b[0];
+        b[0] = temp;
+    }
+    if (a[0] > a[2]) {
+        temp = b[2];
+        b[2] = b[0];
+        b[0] = temp;
+    }
+    if (a[1] > a[2]) {
+        temp = b[2];
+        b[2] = b[1];
+        b[1] = temp;
+    }
+
+    return b[1];
+}
+
+void updateBEMF() {
+    //Back EMF measurements are made automatically by coordination of the ADC, PWM, and DMA.
+    //Copy to local variables. Not strictly neccesary, just for clarity.
+    //This **REQUIRES** that the divider on the battery & BEMF circuits have the same ratio.
+    bemf[0] = adcGetVBatt() - adcGetBEMFL();
+    //bemf[0] = ADC1BUF0;
+    bemf[1] = adcGetVBatt() - adcGetBEMFR();
+    //NOTE: at this point, we should have a proper correspondance between
+    //   the order of all the structured variable; bemf[i] associated with
+    //   pidObjs[i], bemfLast[i], etc.
+    //   Any "jumbling" of the inputs can be done in the above assignments.
+
+    //Negative ADC measures mean nothing and should never happen anyway
+    if (bemf[0] < 0) {
+        bemf[0] = 0;
+    }
+    if (bemf[1] < 0) {
+        bemf[1] = 0;
+    }
+
+    //Apply median filter
+    int i;
+    for (i = 0; i < NUM_MOTOR_PIDS; i++) {
+        bemfHist[i][2] = bemfHist[i][1]; //rotate first
+        bemfHist[i][1] = bemfHist[i][0];
+        bemfHist[i][0] = bemf[i]; //include newest value
+        bemf[i] = medianFilter3(bemfHist[i]); //Apply median filter
+    }
+
+    // IIR filter on BEMF: y[n] = 0.2 * y[n-1] + 0.8 * x[n]
+    bemf[0] = (5 * (long) bemfLast[0] / 10) + 5 * (long) bemf[0] / 10;
+    bemf[1] = (5 * (long) bemfLast[1] / 10) + 5 * (long) bemf[1] / 10;
+    bemfLast[0] = bemf[0]; //bemfLast will not be used after here, OK to set
+    bemfLast[1] = bemf[1];
+}
+
 static void logTrace(RegulatorError *error, RegulatorOutput *output) {
 
     RegulatorStateStruct *storage;
@@ -483,6 +563,9 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         storage->u[0] = output->thrust;
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
+        //memcpy(storage->bemf, bemf, 2*sizeof(int));
+        storage->bemf[0] = ADC1BUF0;
+        storage->bemf[1] = bemf[1];
         storage->time = sclockGetLocalTicks();        
     }
     ppbuffFlip(&reg_state_buff);

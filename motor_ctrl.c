@@ -159,7 +159,7 @@ static void mcSetupPeripheral(void) {
 
     PTPER = pwmPeriod;
 
-    SEVTCMP = 1; // Special Event Trigger Compare Value for ADC in phase with PWM
+    SEVTCMP = 620; // Special Event Trigger Compare Value for ADC in phase with PWM
 
     PWMCON1bits.PMOD1 = 1;
     PWMCON1bits.PMOD2 = 1;

@@ -76,6 +76,7 @@
 #include "dfmem.h"
 #include "radio.h"
 #include "spi_controller.h"
+#include "adc_pid.h"
 
 // Other utilities
 #include "larray.h"
@@ -189,6 +190,7 @@ void setupAll(void) {
     */
     gyroSetup();
     gyroSetDeadZone(25);
+
     
     LED_GREEN = 1; // CPU, sensors initialization clear
     
@@ -207,6 +209,7 @@ void setupAll(void) {
     
     LED_ORANGE = 1; // Communications initialization clear
     
+    adcSetup();
     telemSetup();                   // Telemetry logger
     telemSetSubsampleRate(TELEM_SUBSAMPLE);
     rgltrSetup(1.0/REGULATOR_FCY);  // Control module

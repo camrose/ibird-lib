@@ -40,6 +40,8 @@
 
 #include "quat.h"
 
+#define NUM_MOTOR_PIDS 2
+
 typedef enum {
     REG_OFF = 0,
     REG_TRACK,
@@ -51,10 +53,11 @@ typedef struct {
     Quaternion pose;    // Position (16)
     Quaternion error;   // Error (16)
     float u[3];         // Outputs (12)
+    int bemf[2]; // BEMF (4)
     unsigned long time; // Timestamp (4)
     //float xl_data[3];   // Accel Data (12)
     //unsigned char xl_data[3*sizeof(int)];
-} RegulatorStateStruct; // Total: 64 bytes
+} RegulatorStateStruct; // Total: 68 bytes
 
 typedef RegulatorStateStruct* RegulatorState;
 
