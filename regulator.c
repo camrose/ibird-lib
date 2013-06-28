@@ -97,6 +97,8 @@ typedef struct {
 
 #define DEFAULT_SLEW_LIMIT  (1.0)
 
+#define max( a, b ) ( ((a) > (b)) ? (a) : (b) )
+
 // =========== Static Variables ================================================
 // Control loop objects
 CtrlPidParamStruct yawPid, pitchPid, thrustPid;
@@ -131,6 +133,9 @@ int bemf[NUM_MOTOR_PIDS]; //used to store the true, unfiltered speed
 int bemfLast[NUM_MOTOR_PIDS]; // Last post-median-filter value
 int bemfHist[NUM_MOTOR_PIDS][3]; //This is ONLY for applying the median filter to
 int medianFilter3(int*);
+int max_bemf;
+unsigned char halt_wings_closed;
+unsigned char wings_stopped;
 
 // =========== Public Functions ===============================================
 
@@ -181,6 +186,10 @@ void rgltrSetup(float ts) {
         bemfHist[i][1] = 0;
         bemfHist[i][2] = 0;
     }
+
+    max_bemf = 0;
+    halt_wings_closed = 0;
+    wings_stopped = 0;
 }
 
 void rgltrSetMode(unsigned char flag) {
@@ -217,7 +226,14 @@ void rgltrSetRemote(void) {
     ctrlStop(&pitchPid);
     ctrlStop(&thrustPid);
     servoStart();
-}    
+}
+
+void rgltrStopWings(unsigned char stop) {
+    halt_wings_closed = stop;
+    if (stop == 0) {
+        wings_stopped = 0;
+    }
+}
 
 void rgltrSetYawRateFilter(RateFilterParams params) {
 
@@ -338,19 +354,32 @@ void rgltrGetState(RegulatorState dst) {
 void rgltrRunController(void) {
     
     RegulatorError error;        
-    RegulatorOutput output;    
+    RegulatorOutput output;
+    int max_bemf_temp;
 
     if(!is_ready) { return; }    
 
     attEstimatePose();  // Update attitude estimate
     updateBEMF();
-    
+
+    max_bemf_temp = max(bemfHist[0][0], max(bemfHist[0][1],bemfHist[0][2]));
+
+    if (max_bemf_temp > max_bemf && max_bemf_temp < max_bemf + 10) {
+        max_bemf = max_bemf_temp;
+    }
+
     rateProcess();      // Update limited_reference
     slewProcess(&reference, &limited_reference); // Apply slew rate limiting
 
     attGetQuat(&pose);
     calculateError(&error);    
     calculateOutputs(&error, &output);
+
+    if ((halt_wings_closed == 1 && (bemfHist[0][0] > max_bemf - 5 || bemfHist[0][0] < max_bemf + 5)) || wings_stopped == 1) {
+        output.thrust = 0.0;
+        wings_stopped = 1;
+    }
+
     applyOutputs(&output);        
     
     if(is_logging) {

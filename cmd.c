@@ -105,6 +105,7 @@ static void cmdDirDumpResponse(MacPacket packet);
 static void cmdRequestClockUpdate(MacPacket packet);
 static void cmdResponseClockUpdate(MacPacket packet);
 
+static void cmdStopWings(MacPacket packet);
 static void cmdRotateRefGlobal(MacPacket packet);
 static void cmdRotateRefLocal(MacPacket packet);
 static void cmdSetRegulatorOffsets(MacPacket packet);
@@ -181,6 +182,7 @@ unsigned int cmdSetup(unsigned int queue_size) {
 
     cmd_func[CMD_ECHO] = &cmdEcho;
 
+    cmd_func[CMD_STOP_WINGS] = &cmdStopWings;
     cmd_func[CMD_ROTATE_REF_GLOBAL] = &cmdRotateRefGlobal;
     cmd_func[CMD_ROTATE_REF_LOCAL] = &cmdRotateRefLocal;
     cmd_func[CMD_SET_TEMP_ROT] = &cmdSetRegulatorTempRotation;
@@ -390,6 +392,12 @@ static void cmdResponseClockUpdate(MacPacket packet) {
 }
 
 // ====== Regulator and Control ===============================================
+
+static void cmdStopWings(MacPacket packet) {
+    unsigned char* frame = payGetData(macGetPayload(packet));
+    rgltrStopWings(frame[0]);
+}
+
 static void cmdRotateRefGlobal(MacPacket packet) {
     
     Quaternion *rot = payGetData(macGetPayload(packet));

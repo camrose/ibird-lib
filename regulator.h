@@ -100,6 +100,9 @@ void rgltrSetRemote(void);
 // Set 3 axes offsets
 void rgltrSetOffsets(float *offsets);
 
+// Stop or start the wings using back EMF
+void rgltrStopWings(unsigned char stop);
+
 /**
  * Set rate filter parameters
  * @param params - Yaw/pitch/roll filter parameter struct
