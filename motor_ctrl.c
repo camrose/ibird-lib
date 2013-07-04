@@ -156,7 +156,7 @@ static void mcSetupPeripheral(void) {
     PDC2 = 0;   // duty cycle = 0
     PDC3 = 0;   // duty cycle = 0
     PDC4 = 0;   // duty cycle = 0
-
+    
     PTPER = pwmPeriod;
 
     SEVTCMP = 620; // Special Event Trigger Compare Value for ADC in phase with PWM

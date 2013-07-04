@@ -515,7 +515,7 @@ void updateBEMF() {
     //Back EMF measurements are made automatically by coordination of the ADC, PWM, and DMA.
     //Copy to local variables. Not strictly neccesary, just for clarity.
     //This **REQUIRES** that the divider on the battery & BEMF circuits have the same ratio.
-    bemf[0] = adcGetVBatt() - adcGetBEMFL();
+    bemf[0] = adcGetBEMFL();
     //bemf[0] = ADC1BUF0;
     bemf[1] = adcGetVBatt() - adcGetBEMFR();
     //NOTE: at this point, we should have a proper correspondance between
@@ -531,20 +531,20 @@ void updateBEMF() {
         bemf[1] = 0;
     }
 
-    //Apply median filter
-    int i;
-    for (i = 0; i < NUM_MOTOR_PIDS; i++) {
-        bemfHist[i][2] = bemfHist[i][1]; //rotate first
-        bemfHist[i][1] = bemfHist[i][0];
-        bemfHist[i][0] = bemf[i]; //include newest value
-        bemf[i] = medianFilter3(bemfHist[i]); //Apply median filter
-    }
-
-    // IIR filter on BEMF: y[n] = 0.2 * y[n-1] + 0.8 * x[n]
-    bemf[0] = (5 * (long) bemfLast[0] / 10) + 5 * (long) bemf[0] / 10;
-    bemf[1] = (5 * (long) bemfLast[1] / 10) + 5 * (long) bemf[1] / 10;
-    bemfLast[0] = bemf[0]; //bemfLast will not be used after here, OK to set
-    bemfLast[1] = bemf[1];
+//    //Apply median filter
+//    int i;
+//    for (i = 0; i < NUM_MOTOR_PIDS; i++) {
+//        bemfHist[i][2] = bemfHist[i][1]; //rotate first
+//        bemfHist[i][1] = bemfHist[i][0];
+//        bemfHist[i][0] = bemf[i]; //include newest value
+//        bemf[i] = medianFilter3(bemfHist[i]); //Apply median filter
+//    }
+//
+//    // IIR filter on BEMF: y[n] = 0.2 * y[n-1] + 0.8 * x[n]
+//    bemf[0] = (5 * (long) bemfLast[0] / 10) + 5 * (long) bemf[0] / 10;
+//    bemf[1] = (5 * (long) bemfLast[1] / 10) + 5 * (long) bemf[1] / 10;
+//    bemfLast[0] = bemf[0]; //bemfLast will not be used after here, OK to set
+//    bemfLast[1] = bemf[1];
 }
 
 static void logTrace(RegulatorError *error, RegulatorOutput *output) {
@@ -564,7 +564,8 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
         //memcpy(storage->bemf, bemf, 2*sizeof(int));
-        storage->bemf[0] = ADC1BUF0;
+        updateBEMF();
+        storage->bemf[0] = bemf[0];
         storage->bemf[1] = bemf[1];
         storage->time = sclockGetLocalTicks();        
     }

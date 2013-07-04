@@ -88,14 +88,14 @@
 
 // ==== CONSTANTS =============================================
 #define FCY                         (40000000)  // 40 MIPS   
-#define REGULATOR_FCY               (300)       // 300 Hz
+#define REGULATOR_FCY               (500)       // 300 Hz
 #define RADIO_FCY                   (200)       // 200 Hz
 #define RADIO_TX_QUEUE_SIZE         (40)        // 40 Outgoing
 #define RADIO_RX_QUEUE_SIZE         (40)        // 40 Incoming
 
 #define DIRECTORY_SIZE              (20)        // Network size
 #define NUM_CAM_FRAMES              (1)         // Camera driver frames
-#define TELEM_SUBSAMPLE             (5)         // Telemetry subsample default
+#define TELEM_SUBSAMPLE             (1)         // Telemetry subsample default
 
 // ==== FUNCTION STUBS =========================================
 static void processRadioBuffer(void);
