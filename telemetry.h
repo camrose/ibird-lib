@@ -53,7 +53,8 @@ typedef struct {
     Quaternion pose;        // (16) Position
     Quaternion error;       // (16) Error
     float u[3];             // (12) Output
-    int bemf[2];
+    int bemf;
+    int crankAngle;
     unsigned long time;     // (4) Local time 
     //unsigned char ED;
     //unsigned char RSSI;

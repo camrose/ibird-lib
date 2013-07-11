@@ -62,6 +62,7 @@
 #include "rate.h"
 #include "slew.h"
 #include "adc_pid.h"
+#include "led.h"
 
 // Hardware/actuator interface
 #include "motor_ctrl.h"
@@ -75,6 +76,7 @@
 #include "ppbuff.h"
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 typedef struct {
     float thrust;
@@ -87,6 +89,13 @@ typedef struct {
     float pitch_err;
     float roll_err;
 } RegulatorError;
+
+typedef struct {
+    unsigned char stopped;
+    unsigned char enabled;
+    int stopPos;
+    int count_calib;
+} WingInst;
 
 #define YAW_SAT_MAX         (1.0)
 #define YAW_SAT_MIN         (-1.0)
@@ -117,7 +126,8 @@ static PingPongBuffer reg_state_buff;
 static float runYawControl(float yaw);
 static float runPitchControl(float pitch);
 static float runRollControl(float roll);
-static void updateBEMF();
+static int updateBEMF();
+static void updateCrank();
 
 static void calculateError(RegulatorError *error);
 static void filterError(RegulatorError *error);
@@ -131,6 +141,13 @@ int bemf[NUM_MOTOR_PIDS]; //used to store the true, unfiltered speed
 int bemfLast[NUM_MOTOR_PIDS]; // Last post-median-filter value
 int bemfHist[NUM_MOTOR_PIDS][3]; //This is ONLY for applying the median filter to
 int medianFilter3(int*);
+float crankAngle;
+int zone;
+int bemfVals[4];
+int crankCalibrated;
+unsigned long curr_time;
+unsigned long prev_time;
+WingInst wing_status;
 
 // =========== Public Functions ===============================================
 
@@ -181,13 +198,28 @@ void rgltrSetup(float ts) {
         bemfHist[i][1] = 0;
         bemfHist[i][2] = 0;
     }
+    crankAngle = 0;
+    zone = 0;
+    bemfVals[0] = 0;
+    bemfVals[1] = 0;
+    bemfVals[2] = 0;
+    bemfVals[3] = 0;
+    crankCalibrated = 0;
+    curr_time = 0;
+    prev_time = 0;
+    wing_status.stopPos = 0;
+    wing_status.enabled = 0;
+    wing_status.stopped = 0;
+    wing_status.count_calib = 0;
 }
 
 void rgltrSetMode(unsigned char flag) {
 
     if(flag == REG_OFF) {
+        LED_RED = 1;
         rgltrSetOff();
     } else if(flag == REG_TRACK) {
+        LED_RED = 0;
         rgltrSetTrack();
     } else if(flag == REG_REMOTE_CONTROL) {
         rgltrSetRemote();
@@ -338,19 +370,35 @@ void rgltrGetState(RegulatorState dst) {
 void rgltrRunController(void) {
     
     RegulatorError error;        
-    RegulatorOutput output;    
+    RegulatorOutput output;
+    int updated_bemf;
 
     if(!is_ready) { return; }    
 
     attEstimatePose();  // Update attitude estimate
-    updateBEMF();
-    
+    updated_bemf = updateBEMF();
+    wing_status.count_calib++;
+    if (crankCalibrated == 1 && updated_bemf == 1) {
+        if (wing_status.count_calib % 10 == 0) {
+            wing_status.count_calib = 0;
+            calibCrank();
+        }
+        updateCrank();
+    }
+
+
     rateProcess();      // Update limited_reference
     slewProcess(&reference, &limited_reference); // Apply slew rate limiting
 
     attGetQuat(&pose);
     calculateError(&error);    
     calculateOutputs(&error, &output);
+
+    if ((crankAngle > (wing_status.stopPos - 10) && crankAngle < (wing_status.stopPos + 10) && wing_status.enabled == 1) || wing_status.stopped == 1) {
+        wing_status.stopped = 1;
+        output.thrust = 0.0;
+    }
+
     applyOutputs(&output);        
     
     if(is_logging) {
@@ -511,7 +559,8 @@ int medianFilter3(int* a) {
     return b[1];
 }
 
-void updateBEMF() {
+int updateBEMF() {
+    int updated_bemf = 0;
     //Back EMF measurements are made automatically by coordination of the ADC, PWM, and DMA.
     //Copy to local variables. Not strictly neccesary, just for clarity.
     //This **REQUIRES** that the divider on the battery & BEMF circuits have the same ratio.
@@ -531,20 +580,125 @@ void updateBEMF() {
         bemf[1] = 0;
     }
 
-//    //Apply median filter
-//    int i;
-//    for (i = 0; i < NUM_MOTOR_PIDS; i++) {
-//        bemfHist[i][2] = bemfHist[i][1]; //rotate first
-//        bemfHist[i][1] = bemfHist[i][0];
-//        bemfHist[i][0] = bemf[i]; //include newest value
-//        bemf[i] = medianFilter3(bemfHist[i]); //Apply median filter
-//    }
+    int i;
+    for (i = 0; i < 1; i++) {
+        if (bemfHist[i][0] != bemf[i]) {
+            bemfHist[i][2] = bemfHist[i][1]; //rotate first
+            bemfHist[i][1] = bemfHist[i][0];
+            bemfHist[i][0] = bemf[i]; //include newest value
+            updated_bemf = 1;
+            prev_time = curr_time;
+            curr_time = sclockGetLocalMillis();
+        }
+    }
+    return updated_bemf;
 //
 //    // IIR filter on BEMF: y[n] = 0.2 * y[n-1] + 0.8 * x[n]
 //    bemf[0] = (5 * (long) bemfLast[0] / 10) + 5 * (long) bemf[0] / 10;
 //    bemf[1] = (5 * (long) bemfLast[1] / 10) + 5 * (long) bemf[1] / 10;
 //    bemfLast[0] = bemf[0]; //bemfLast will not be used after here, OK to set
 //    bemfLast[1] = bemf[1];
+}
+
+void rgltrStopWings() {
+    wing_status.stopPos = 0;
+    wing_status.enabled = 1;
+}
+
+void calibCrank() {
+    int max_bemf_peak1 = 0;
+    int max_bemf_peak2 = 0;
+    int min_bemf_peak1 = 0;
+    int min_bemf_peak2 = 0;
+    int holder;
+    
+    while (max_bemf_peak1 == 0 || max_bemf_peak2 == 0) {
+        if (bemfHist[0][0] < bemfHist[0][1] && bemfHist[0][1] > bemfHist[0][2]) {
+            if (max_bemf_peak1 == 0) {
+                max_bemf_peak1 = bemfHist[0][1];
+            } else if (bemfHist[0][1] != max_bemf_peak1 && max_bemf_peak2 == 0) {
+                max_bemf_peak2 = bemfHist[0][1];
+            }
+        }
+        updateBEMF();
+    }
+
+    if (max_bemf_peak2 > max_bemf_peak1) {
+        crankAngle = 0;
+    } else {
+        crankAngle = 180;
+    }
+
+    while (min_bemf_peak1 == 0 || min_bemf_peak2 == 0) {
+        if (bemfHist[0][0] > bemfHist[0][1] && bemfHist[0][1] < bemfHist[0][2]) {
+            if (min_bemf_peak1 == 0) {
+                min_bemf_peak1 = bemfHist[0][1];
+            } else if (bemfHist[0][1] != min_bemf_peak1 && min_bemf_peak2 == 0) {
+                min_bemf_peak2 = bemfHist[0][1];
+            }
+        }
+        updateBEMF();
+    }
+
+    if (crankAngle == 0) {
+        holder = max_bemf_peak2;
+        max_bemf_peak2 = max_bemf_peak1;
+        max_bemf_peak1 = holder;
+    } else {
+        holder = min_bemf_peak2;
+        min_bemf_peak2 = min_bemf_peak1;
+        min_bemf_peak1 = holder;
+    }
+
+    zone = 0;
+    if (crankAngle == 0) {
+        zone = 4;
+        crankAngle = 270;
+    } else {
+        zone = 2;
+        crankAngle = 90;
+    }
+    bemfVals[0] = max_bemf_peak1;
+    bemfVals[1] = min_bemf_peak1;
+    bemfVals[2] = max_bemf_peak2;
+    bemfVals[3] = min_bemf_peak2;
+
+    crankCalibrated = 1;
+}
+
+static void updateCrank() {
+    int inter = 0;
+    unsigned long hold_time;
+    double time_diff;
+    float c = 26.0396;
+
+    if (bemfHist[0][0] > bemfHist[0][1] && bemfHist[0][1] < bemfHist[0][2]) {
+        if (zone == 1) {
+            zone = 2;
+        } else {
+            zone = 4;
+        }
+    } else if (bemfHist[0][0] < bemfHist[0][1] && bemfHist[0][1] > bemfHist[0][2]) {
+        if (zone == 4) {
+            zone = 1;
+        } else {
+            zone = 3;
+        }
+    }
+    if (zone == 1) {
+        inter = (bemf[0] - bemfVals[zone])/(bemfVals[zone-1] - bemfVals[zone]);
+    } else if (zone == 2) {
+        inter = (bemf[0] - bemfVals[zone])/(bemfVals[zone-1] - bemfVals[zone]);
+    } else if (zone == 3) {
+        inter = (bemf[0] - bemfVals[zone])/(bemfVals[zone-1] - bemfVals[zone]);
+    } else {
+        inter = (bemf[0] - bemfVals[0])/(bemfVals[zone-1] - bemfVals[0]);
+    }
+
+    //crankAngle = 90 + 90*(zone - 1) - 90*inter;
+    hold_time = curr_time - prev_time;
+    time_diff = ((double)hold_time)/1000.0;
+    crankAngle = (float)(fmod((crankAngle + c*bemfHist[0][0]*(time_diff)), 360.0));
 }
 
 static void logTrace(RegulatorError *error, RegulatorOutput *output) {
@@ -564,10 +718,11 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
         //memcpy(storage->bemf, bemf, 2*sizeof(int));
-        updateBEMF();
-        storage->bemf[0] = bemf[0];
-        storage->bemf[1] = bemf[1];
-        storage->time = sclockGetLocalTicks();        
+        //updateBEMF();
+        storage->bemf = bemfHist[0][0];
+        storage->crank = 0;
+        storage->time = curr_time;
+        //storage->time = curr_time;
     }
     ppbuffFlip(&reg_state_buff);
 

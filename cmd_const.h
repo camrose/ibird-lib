@@ -62,6 +62,8 @@
 #define CMD_PING                        (0x12)      // Do nothing
 #define CMD_ECHO                        (0x13)      // send back the received packet
 
+#define CMD_STOP_CLOSED                 (0x15)      // Stop wings in closed position
+#define CMD_CALIB_CRANK                 (0x16)
 #define CMD_SET_TEMP_ROT                (0x17)
 #define CMD_ROTATE_REF_GLOBAL           (0x18)      //
 #define CMD_ROTATE_REF_LOCAL            (0x19)      //
