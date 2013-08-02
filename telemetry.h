@@ -47,14 +47,14 @@ typedef struct {
 } TelemetryDatapoint;
  
 // State Telemetry Packet (Type B)
-#define TELEMETRY_B_SIZE	(68)
+#define TELEMETRY_B_SIZE	(72)
 typedef struct {   
     Quaternion ref;         // (16) Reference
     Quaternion pose;        // (16) Position
     Quaternion error;       // (16) Error
     float u[3];             // (12) Output
-    int bemf;
-    int crankAngle;
+    int bemf[2];
+    float crankAngle;
     unsigned long time;     // (4) Local time 
     //unsigned char ED;
     //unsigned char RSSI;
@@ -77,7 +77,8 @@ void telemToggleStreaming(unsigned int addr);
 void telemLog(void);
 // Process the buffer
 void telemProcess(void);
-
+// Send telemetry to base
+void telemStream(void);
 // Send a type B telemetry packet
 void telemSendB(unsigned int addr);
 

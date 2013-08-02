@@ -377,12 +377,12 @@ void rgltrRunController(void) {
 
     attEstimatePose();  // Update attitude estimate
     updated_bemf = updateBEMF();
-    wing_status.count_calib++;
     if (crankCalibrated == 1 && updated_bemf == 1) {
-        if (wing_status.count_calib % 10 == 0) {
-            wing_status.count_calib = 0;
-            calibCrank();
-        }
+//        wing_status.count_calib++;
+//        if (wing_status.count_calib % 100 == 0) {
+//            wing_status.count_calib = 0;
+//            calibCrank();
+//        }
         updateCrank();
     }
 
@@ -394,7 +394,8 @@ void rgltrRunController(void) {
     calculateError(&error);    
     calculateOutputs(&error, &output);
 
-    if ((crankAngle > (wing_status.stopPos - 10) && crankAngle < (wing_status.stopPos + 10) && wing_status.enabled == 1) || wing_status.stopped == 1) {
+    if ((crankAngle > (wing_status.stopPos - 5) && crankAngle < (wing_status.stopPos + 5) && wing_status.enabled == 1) || wing_status.stopped == 1) {
+        LED_RED = 1;
         wing_status.stopped = 1;
         output.thrust = 0.0;
     }
@@ -601,11 +602,12 @@ int updateBEMF() {
 }
 
 void rgltrStopWings() {
-    wing_status.stopPos = 0;
+    wing_status.stopPos = 40 % 360;
     wing_status.enabled = 1;
 }
 
 void calibCrank() {
+    LED_RED = 0;
     int max_bemf_peak1 = 0;
     int max_bemf_peak2 = 0;
     int min_bemf_peak1 = 0;
@@ -672,17 +674,27 @@ static void updateCrank() {
     double time_diff;
     float c = 26.0396;
 
+    unsigned char do_integ = 1;
+
     if (bemfHist[0][0] > bemfHist[0][1] && bemfHist[0][1] < bemfHist[0][2]) {
         if (zone == 1) {
             zone = 2;
+            crankAngle = 90;
+            do_integ = 0;
         } else {
             zone = 4;
+            crankAngle = 270;
+            do_integ = 0;
         }
     } else if (bemfHist[0][0] < bemfHist[0][1] && bemfHist[0][1] > bemfHist[0][2]) {
         if (zone == 4) {
             zone = 1;
+            crankAngle = 0;
+            do_integ = 0;
         } else {
             zone = 3;
+            crankAngle = 180;
+            do_integ = 0;
         }
     }
     if (zone == 1) {
@@ -696,9 +708,11 @@ static void updateCrank() {
     }
 
     //crankAngle = 90 + 90*(zone - 1) - 90*inter;
-    hold_time = curr_time - prev_time;
-    time_diff = ((double)hold_time)/1000.0;
-    crankAngle = (float)(fmod((crankAngle + c*bemfHist[0][0]*(time_diff)), 360.0));
+    if (do_integ) {
+        hold_time = curr_time - prev_time;
+        time_diff = ((double)hold_time)/1000.0;
+        crankAngle = (float)(fmod((crankAngle + c*bemfHist[0][0]*(time_diff)), 360.0));
+    }
 }
 
 static void logTrace(RegulatorError *error, RegulatorOutput *output) {
@@ -719,9 +733,10 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         storage->u[2] = output->elevator;
         //memcpy(storage->bemf, bemf, 2*sizeof(int));
         //updateBEMF();
-        storage->bemf = bemfHist[0][0];
-        storage->crank = 0;
-        storage->time = curr_time;
+        storage->bemf[0] = bemfHist[0][0];
+        storage->bemf[1] = bemf[1];
+        storage->crank = crankAngle;
+        storage->time = sclockGetGlobalTicks();
         //storage->time = curr_time;
     }
     ppbuffFlip(&reg_state_buff);

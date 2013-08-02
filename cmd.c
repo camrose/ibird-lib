@@ -832,11 +832,12 @@ void cmdSetHP(MacPacket packet) {
 }
 
 void cmdSetTelemSubsample(MacPacket packet) {
-    
-    unsigned int *data;
-    
-    data = (unsigned int*) payGetData(macGetPayload(packet));
-    telemSetSubsampleRate(*data);
+
+    Payload pld = macGetPayload(packet);
+    unsigned int* frame = (unsigned int*) payGetData(pld);
+    unsigned int count = frame[0];
+
+    telemSetSubsampleRate(count);
     
 }
 
