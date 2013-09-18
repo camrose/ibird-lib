@@ -131,8 +131,7 @@ int main(void) {
     while(1) {
     
         processRadioBuffer();
-        cmdProcessBuffer();        
-        telemProcess();        
+        cmdProcessBuffer();            
 
         now = sclockGetGlobalMillis();
         phase = now % 2000;
@@ -300,6 +299,8 @@ void __attribute__((interrupt, no_auto_psv)) _T5Interrupt(void) {
     gyroReadXYZ();    
     rgltrRunController();    
     telemLog();
+    telemProcess();    
+    telemStream();
     
     _T5IF = 0;
 

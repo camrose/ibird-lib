@@ -68,7 +68,7 @@ typedef enum {
 // =========== Static Variables ================================================
 static unsigned char is_ready = 0, is_streaming = 0;
 static TelemStatus status = TELEM_IDLE;
-static unsigned int iter_num, subsample_period, stream_addr;
+static unsigned int iter_num, subsample_period, stream_addr, send_iter;
 
 static PoolBuffStruct telem_buff;
 static TelemetryDatapoint datapoints[TELEM_BUFF_SIZE];
@@ -173,16 +173,21 @@ void telemLog(void) {
 
 }
 
+void telemStream(void) {
+    if(!is_ready) { return; }
+    if(!is_streaming) { return; }
+
+    send_iter++;
+    if(send_iter % subsample_period != 0) { return; }
+
+    telemSendB(stream_addr);
+}
 
 void telemProcess(void) {
 
     TelemetryDatapoint *data;
 
     if(!is_ready) { return; }
-
-    if (is_streaming) {
-        telemSendB(stream_addr);
-    }
 
     if(mem_page_pos >= mem_geo.max_pages) { telemStopLogging(); }
     if(status != TELEM_LOGGING) { return; }

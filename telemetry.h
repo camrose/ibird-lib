@@ -77,7 +77,8 @@ void telemToggleStreaming(unsigned int addr);
 void telemLog(void);
 // Process the buffer
 void telemProcess(void);
-
+// Send telemetry to base
+void telemStream(void);
 // Send a type B telemetry packet
 void telemSendB(unsigned int addr);
 
