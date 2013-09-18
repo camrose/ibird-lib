@@ -53,12 +53,12 @@ typedef struct {
     Quaternion pose;    // Position (16)
     Quaternion error;   // Error (16)
     float u[3];         // Outputs (12)
-    int bemf; // BEMF (2)
-    int crank; //crank angle (4)
+    int bemf[2]; // BEMF (4)
+    float crank; //crank angle (4)
     unsigned long time; // Timestamp (4)
     //float xl_data[3];   // Accel Data (12)
     //unsigned char xl_data[3*sizeof(int)];
-} RegulatorStateStruct; // Total: 70 bytes
+} RegulatorStateStruct; // Total: 72 bytes
 
 typedef RegulatorStateStruct* RegulatorState;
 
