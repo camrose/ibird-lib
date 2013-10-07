@@ -282,7 +282,7 @@ static void attemptClockSync(void) {
 
 static void batteryLowCallback(void) {
 
-    rgltrSetOff();
+    //rgltrSetOff();
 
 }
 
