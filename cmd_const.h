@@ -116,6 +116,8 @@
 
 #define CMD_TOGGLE_STREAMING            (0x54)      // Toggle telemetry streaming
 
+#define CMD_TOGGLE_EIGHT                (0x55)      // Toggle figure 8
+
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use
 
