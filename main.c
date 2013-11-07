@@ -182,11 +182,11 @@ void setupAll(void) {
     dfmemSetup();                           // Flash memory device
     //camSetup(cam_frames, NUM_CAM_FRAMES);   // Camera device
     
-    /* Accelerometer setup
+    // Accelerometer setup
     xlSetup();
     xlSetRange(16);                         // +- 16 g range
     xlSetOutputRate(0, 0x0c);               // 800 Hz
-    */
+    
     gyroSetup();
     gyroSetDeadZone(25);
 

@@ -398,7 +398,10 @@ static void cmdResponseClockUpdate(MacPacket packet) {
 // ====== Regulator and Control ===============================================
 
 static void cmdStopClosed(MacPacket packet) {
-    rgltrStopWings();
+    Payload pld = macGetPayload(packet);
+    unsigned char flag = *(payGetData(pld));
+    
+    rgltrStopWings(flag);
 }
 
 static void cmdCalibCrank(MacPacket packet) {

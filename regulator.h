@@ -51,14 +51,15 @@ typedef enum {
 typedef struct {    
     Quaternion ref;     // References (16)
     Quaternion pose;    // Position (16)
-    Quaternion error;   // Error (16)
+    //Quaternion error;   // Error (16)
+    unsigned char gyro_data[3*sizeof(int)]; // (6)
+    unsigned char xl_data[3*sizeof(int)]; // (6)
     float u[3];         // Outputs (12)
     int bemf[2]; // BEMF (4)
     float crank; //crank angle (4)
     unsigned long time; // Timestamp (4)
     //float xl_data[3];   // Accel Data (12)
-    //unsigned char xl_data[3*sizeof(int)];
-} RegulatorStateStruct; // Total: 72 bytes
+} RegulatorStateStruct; // Total: 68 bytes
 
 typedef RegulatorStateStruct* RegulatorState;
 
@@ -156,7 +157,7 @@ void rgltrGetState(RegulatorState state);
 void rgltrStartLogging(void);
 void rgltrStopLogging(void);
 void calibCrank(void);
-void rgltrStopWings(void);
+void rgltrStopWings(unsigned char flag);
 
 
 #endif  // __REGULATOR_H

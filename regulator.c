@@ -601,9 +601,17 @@ int updateBEMF() {
 //    bemfLast[1] = bemf[1];
 }
 
-void rgltrStopWings() {
-    wing_status.stopPos = 40 % 360;
-    wing_status.enabled = 1;
+void rgltrStopWings(unsigned char flag) {
+    if (flag == 0) {
+        wing_status.enabled = 0;
+        wing_status.stopped = 0;
+    } else if (flag == 1) {
+        wing_status.stopPos = 40 % 360;
+        wing_status.enabled = 1;
+    } else {
+        wing_status.stopPos = 40 % 180;
+        wing_status.enabled = 1;
+    }
 }
 
 void calibCrank() {
@@ -717,6 +725,8 @@ static void updateCrank() {
 
 static void logTrace(RegulatorError *error, RegulatorOutput *output) {
 
+    int xldat[3];
+    int gyrodat[3];
     RegulatorStateStruct *storage;
     
     storage = ppbuffReadInactive(&reg_state_buff);
@@ -724,20 +734,21 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
     if(storage != NULL) {
         quatCopy(&storage->ref, &limited_reference);
         quatCopy(&storage->pose, &pose);        
-        storage->error.w = 0.0;
-        storage->error.x = error->roll_err;
-        storage->error.y = error->pitch_err;
-        storage->error.z = error->yaw_err;
+        //storage->error.w = 0.0;
+        //storage->error.x = error->roll_err;
+        //storage->error.y = error->pitch_err;
+        //storage->error.z = error->yaw_err;
+        gyroGetIntXYZ(gyrodat);
+        memcpy(&storage->gyro_data, gyrodat, 3*sizeof(int));
+        xlGetXYZ(xldat);
+        memcpy(&storage->xl_data, xldat, 3*sizeof(int));
         storage->u[0] = output->thrust;
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
-        //memcpy(storage->bemf, bemf, 2*sizeof(int));
-        //updateBEMF();
         storage->bemf[0] = bemfHist[0][0];
         storage->bemf[1] = bemf[1];
         storage->crank = crankAngle;
-        storage->time = curr_time;
-        //storage->time = curr_time;
+        storage->time = sclockGetLocalMillis();
     }
     ppbuffFlip(&reg_state_buff);
 
