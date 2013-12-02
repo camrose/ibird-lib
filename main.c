@@ -77,6 +77,7 @@
 #include "radio.h"
 #include "spi_controller.h"
 #include "adc_pid.h"
+#include "hall.h"
 
 // Other utilities
 #include "larray.h"
@@ -183,9 +184,9 @@ void setupAll(void) {
     //camSetup(cam_frames, NUM_CAM_FRAMES);   // Camera device
     
     // Accelerometer setup
-    xlSetup();
-    xlSetRange(16);                         // +- 16 g range
-    xlSetOutputRate(0, 0x0c);               // 800 Hz
+    //xlSetup();
+    //xlSetRange(16);                         // +- 16 g range
+    //xlSetOutputRate(0, 0x0c);               // 800 Hz
     
     gyroSetup();
     gyroSetDeadZone(25);
@@ -209,6 +210,7 @@ void setupAll(void) {
     LED_ORANGE = 1; // Communications initialization clear
     
     adcSetup();
+    hallSetup();
     telemSetup();                   // Telemetry logger
     telemSetSubsampleRate(TELEM_SUBSAMPLE);
     rgltrSetup(1.0/REGULATOR_FCY);  // Control module

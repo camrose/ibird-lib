@@ -63,6 +63,7 @@
 #include "slew.h"
 #include "adc_pid.h"
 #include "led.h"
+#include "hall.h"
 
 // Hardware/actuator interface
 #include "motor_ctrl.h"
@@ -399,7 +400,13 @@ void rgltrRunController(void) {
         wing_status.stopped = 1;
         output.thrust = 0.0;
     }
-
+    
+//    if (adcGetBEMFR() < 3) {
+//        LED_RED = 1;
+//    } else {
+//        LED_RED = 0;
+//    }
+    
     applyOutputs(&output);        
     
     if(is_logging) {
@@ -727,6 +734,7 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
 
     int xldat[3];
     int gyrodat[3];
+    long* motor_counts;
     RegulatorStateStruct *storage;
     
     storage = ppbuffReadInactive(&reg_state_buff);
@@ -746,7 +754,8 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
         storage->bemf[0] = bemfHist[0][0];
-        storage->bemf[1] = bemf[1];
+        motor_counts = hallGetMotorCounts();
+        storage->bemf[1] = motor_counts[0];
         storage->crank = crankAngle;
         storage->time = sclockGetLocalMillis();
     }
