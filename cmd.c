@@ -69,6 +69,7 @@
 #include "directory.h"
 #include "carray.h"
 #include "slew.h"
+#include "hall.h"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
@@ -150,6 +151,10 @@ static void cmdSetSlewLimit(MacPacket packet);
 
 static void cmdToggleStreaming(MacPacket packet);
 
+static void cmdSetVelProfile(MacPacket packet);
+static void cmdHallPIDSetInput(MacPacket packet);
+static void cmdSetHallGains(MacPacket packet);
+
 static void cmdEcho(MacPacket packet);
 static void cmdNop(MacPacket packet);
 
@@ -226,7 +231,11 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_SET_SLEW_LIMIT] = &cmdSetSlewLimit;
 
     cmd_func[CMD_TOGGLE_STREAMING] = &cmdToggleStreaming;
-    
+
+    cmd_func[CMD_SET_VEL_PROFILE] = &cmdSetVelProfile;
+    cmd_func[CMD_SET_HALL_INPUT] = &cmdHallPIDSetInput;
+    cmd_func[CMD_SET_HALL_GAINS] = &cmdSetHallGains;
+
     return 1;
     
 }
@@ -396,6 +405,35 @@ static void cmdResponseClockUpdate(MacPacket packet) {
 }
 
 // ====== Regulator and Control ===============================================
+
+// set up velocity profile structure  - assume 4 set points for now, generalize later
+static void cmdSetVelProfile(MacPacket packet){
+
+    Payload pld;
+    unsigned char *frame;
+    hallVelLUT *params;
+
+    pld = macGetPayload(packet);
+    frame = payGetData(pld);
+    params = (hallVelLUT*) frame;
+    hallSetVelProfile(&params[0]);
+}
+
+static void cmdHallPIDSetInput(MacPacket packet) {
+    int* frame = payGetData(macGetPayload(packet));
+    hallPIDSetInput(frame);
+}
+
+static void cmdSetHallGains(MacPacket packet) {
+    Payload pld;
+    unsigned char *frame;
+    hallGains *params;
+
+    pld = macGetPayload(packet);
+    frame = payGetData(pld);
+    params = (hallGains*) frame;
+    hallSetGains(&params[0]);
+}
 
 static void cmdStopClosed(MacPacket packet) {
     Payload pld = macGetPayload(packet);
