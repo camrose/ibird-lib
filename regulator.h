@@ -46,6 +46,7 @@ typedef enum {
     REG_OFF = 0,
     REG_TRACK,
     REG_REMOTE_CONTROL,
+    REG_TRACK_HALL,
 } RegulatorMode;
 
 typedef struct {    
@@ -60,6 +61,12 @@ typedef struct {
     unsigned long time; // Timestamp (4)
     //float xl_data[3];   // Accel Data (12)
 } RegulatorStateStruct; // Total: 68 bytes
+
+//typedef struct {
+//    pidPos telem;
+//} ThrustTelemStruct;
+
+//typedef ThrustTelemStruct* ThrustTelem;
 
 typedef RegulatorStateStruct* RegulatorState;
 

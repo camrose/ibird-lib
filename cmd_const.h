@@ -122,6 +122,7 @@
 #define CMD_SET_VEL_PROFILE             (0x55)      // Set velocity setpoints during wing stroke
 #define CMD_SET_HALL_GAINS              (0x56)      // Set PID gains for thrust regulation
 #define CMD_SET_HALL_INPUT              (0x57)      // Set thrust input (this may not belong here)
+#define CMD_HALL_PID_ON                 (0x58)      // Turn on hall thrust control
 
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use

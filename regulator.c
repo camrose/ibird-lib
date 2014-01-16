@@ -219,6 +219,7 @@ void rgltrSetMode(unsigned char flag) {
     if(flag == REG_OFF) {
         LED_RED = 1;
         rgltrSetOff();
+        //hallPIDOff();
     } else if(flag == REG_TRACK) {
         LED_RED = 0;
         rgltrSetTrack();
@@ -572,7 +573,7 @@ int updateBEMF() {
     //Back EMF measurements are made automatically by coordination of the ADC, PWM, and DMA.
     //Copy to local variables. Not strictly neccesary, just for clarity.
     //This **REQUIRES** that the divider on the battery & BEMF circuits have the same ratio.
-    bemf[0] = adcGetBEMFL();
+    bemf[0] = adcGetVBatt() - adcGetBEMFL();
     //bemf[0] = ADC1BUF0;
     bemf[1] = adcGetVBatt() - adcGetBEMFR();
     //NOTE: at this point, we should have a proper correspondance between
@@ -588,17 +589,31 @@ int updateBEMF() {
         bemf[1] = 0;
     }
 
+//    int i;
+//    for (i = 0; i < 1; i++) {
+//        if (bemfHist[i][0] != bemf[i]) {
+//            bemfHist[i][2] = bemfHist[i][1]; //rotate first
+//            bemfHist[i][1] = bemfHist[i][0];
+//            bemfHist[i][0] = bemf[i]; //include newest value
+//            updated_bemf = 1;
+//            prev_time = curr_time;
+//            curr_time = sclockGetLocalMillis();
+//        }
+//    }
+    
+    //Apply median filter
     int i;
     for (i = 0; i < 1; i++) {
-        if (bemfHist[i][0] != bemf[i]) {
-            bemfHist[i][2] = bemfHist[i][1]; //rotate first
-            bemfHist[i][1] = bemfHist[i][0];
-            bemfHist[i][0] = bemf[i]; //include newest value
-            updated_bemf = 1;
-            prev_time = curr_time;
-            curr_time = sclockGetLocalMillis();
-        }
+        bemfHist[i][2] = bemfHist[i][1]; //rotate first
+        bemfHist[i][1] = bemfHist[i][0];
+        bemfHist[i][0] = bemf[i]; //include newest value
+        bemf[i] = medianFilter3(bemfHist[i]); //Apply median filter
     }
+
+    // IIR filter on BEMF: y[n] = 0.2 * y[n-1] + 0.8 * x[n]
+    bemf[0] = (2 * (long) bemfLast[0] / 10) + 8 * (long) bemf[0] / 10;
+    bemfLast[0] = bemf[0]; //bemfLast will not be used after here, OK to set
+
     return updated_bemf;
 //
 //    // IIR filter on BEMF: y[n] = 0.2 * y[n-1] + 0.8 * x[n]
@@ -750,13 +765,16 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         memcpy(&storage->gyro_data, gyrodat, 3*sizeof(int));
         xlGetXYZ(xldat);
         memcpy(&storage->xl_data, xldat, 3*sizeof(int));
-        storage->u[0] = output->thrust;
+        //storage->u[0] = output->thrust;
+        storage->u[0] = hallGetOutput();
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
-        storage->bemf[0] = bemfHist[0][0];
+        storage->bemf[0] = bemf[0];
         motor_counts = hallGetMotorCounts();
         storage->bemf[1] = motor_counts[0];
-        storage->crank = crankAngle;
+        //storage->bemf[1] = (int) (hallGetError()/1000);
+        //storage->crank = crankAngle;
+        storage->crank = (float) hallGetError();
         storage->time = sclockGetLocalMillis();
     }
     ppbuffFlip(&reg_state_buff);

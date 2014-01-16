@@ -90,7 +90,7 @@ static void adcSetupPeripheral(void){
         AD1CON2bits.CHPS = 0b00;    //Convert channels 0 and 1
         AD1CON2bits.SMPI = 0b0010;  //Interrupt after 3 conversions (depends on CHPS and SIMSAM)
         AD1CON2bits.BUFM = 0;       //Always fill conversion buffer from first element
-        AD1CON2bits.ALTS = 0;       //Do not alternate MUXes for analog input selection
+        AD1CON2bits.ALTS = 0;       //Alternate MUXes for analog input selection
 
         AD1CON3bits.ADRC = 0;       //Derive conversion clock from system clock
     //    AD1CON3bits.SAMC = 0b00001; //Auto sampling clock period is one Tad
@@ -149,7 +149,7 @@ unsigned int adcGetVBatt(){
 
 //Buffers need special attribute to be in DMA memory space
 static int  BufferA[3][SAMP_BUFF_SIZE] __attribute__((space(dma)));
-static int  BufferB[3][SAMP_BUFF_SIZE] __attribute__((space(dma)));
+//static int  BufferB[3][SAMP_BUFF_SIZE] __attribute__((space(dma)));
 
 static unsigned int DmaBuffer = 0;
 
@@ -174,7 +174,7 @@ static void initDma0(void)
 	DMA0REQ=13; //ADC1 requests
 
 	DMA0STA = __builtin_dmaoffset(BufferA);		
-	DMA0STB = __builtin_dmaoffset(BufferB);
+	//DMA0STB = __builtin_dmaoffset(BufferB);
 
 	IFS0bits.DMA0IF = 0;			//Clear the DMA interrupt flag bit
         IEC0bits.DMA0IE = 1;			//Set the DMA interrupt enable bit
@@ -191,20 +191,20 @@ static void initDma0(void)
 *****************************************************************************/
 void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
 {
-	if(DmaBuffer==0) {
-		adc_battery = 	BufferA[0][0];	//AN0
-		adc_bemfR = 	BufferA[1][0];	//AN1
-		adc_bemfL = 	BufferA[2][0];	//AN11
-
-	} else {
-
-		adc_battery = 	BufferB[0][0];	//AN0
-		adc_bemfR = 	BufferB[1][0];	//AN1
-		adc_bemfL = 	BufferB[2][0];	//AN11
-	}
-//        adc_battery = 	BufferA[0][0];	//AN0
-//        adc_bemfR = 	BufferA[1][0];	//AN1
-//        adc_bemfL = 	BufferA[2][0];	//AN11
+//	if(DmaBuffer==0) {
+//		adc_battery = 	BufferA[0][0];	//AN0
+//		adc_bemfR = 	BufferA[1][0];	//AN1
+//		adc_bemfL = 	BufferA[2][0];	//AN11
+//
+//	} else {
+//
+//		adc_battery = 	BufferB[0][0];	//AN0
+//		adc_bemfR = 	BufferB[1][0];	//AN1
+//		adc_bemfL = 	BufferB[2][0];	//AN11
+//	}
+        adc_battery = 	BufferA[0][0];	//AN0
+        adc_bemfR = 	BufferA[1][0];	//AN1
+        adc_bemfL = 	BufferA[2][0];	//AN11
 	DmaBuffer ^= 1;	 //Toggle between buffers
 	IFS0bits.DMA0IF = 0;		//Clear the DMA0 Interrupt Flag
 }

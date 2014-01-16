@@ -154,6 +154,7 @@ static void cmdToggleStreaming(MacPacket packet);
 static void cmdSetVelProfile(MacPacket packet);
 static void cmdHallPIDSetInput(MacPacket packet);
 static void cmdSetHallGains(MacPacket packet);
+static void cmdHallPIDOn(MacPacket packet);
 
 static void cmdEcho(MacPacket packet);
 static void cmdNop(MacPacket packet);
@@ -235,6 +236,7 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_SET_VEL_PROFILE] = &cmdSetVelProfile;
     cmd_func[CMD_SET_HALL_INPUT] = &cmdHallPIDSetInput;
     cmd_func[CMD_SET_HALL_GAINS] = &cmdSetHallGains;
+    cmd_func[CMD_HALL_PID_ON] = &cmdHallPIDOn;
 
     return 1;
     
@@ -411,17 +413,21 @@ static void cmdSetVelProfile(MacPacket packet){
 
     Payload pld;
     unsigned char *frame;
-    hallVelLUT *params;
+    hallVelCmd *params;
 
     pld = macGetPayload(packet);
     frame = payGetData(pld);
-    params = (hallVelLUT*) frame;
+    params = (hallVelCmd*) frame;
     hallSetVelProfile(&params[0]);
 }
 
 static void cmdHallPIDSetInput(MacPacket packet) {
-    int* frame = payGetData(macGetPayload(packet));
-    hallPIDSetInput(frame);
+    Payload pld;
+    unsigned int *frame;
+
+    pld = macGetPayload(packet);
+    frame = (unsigned int*) payGetData(pld);
+    hallPIDSetInput(frame[0],frame[1]);
 }
 
 static void cmdSetHallGains(MacPacket packet) {
@@ -433,6 +439,10 @@ static void cmdSetHallGains(MacPacket packet) {
     frame = payGetData(pld);
     params = (hallGains*) frame;
     hallSetGains(&params[0]);
+}
+
+static void cmdHallPIDOn(MacPacket packet) {
+    hallPIDOn();
 }
 
 static void cmdStopClosed(MacPacket packet) {
