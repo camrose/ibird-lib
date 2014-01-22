@@ -39,7 +39,7 @@ typedef struct {
     long p_input; // reference position input - mult by 16
     int v_input; // reference velocity input
     long dState, iState, p, i, d;
-    int Kp, Ki, Kd, Kaw, y_old;
+    float Kp, Ki, Kd, Kaw, y_old;
     unsigned char N;
     char onoff; //boolean
     long p_error; // position error
@@ -56,11 +56,11 @@ typedef struct {
 } pidPos;
 
 typedef struct {
-    int Kp;
-    int Ki;
-    int Kd;
-    int Kaw;
-    int Kff;
+    float Kp;
+    float Ki;
+    float Kd;
+    float Kaw;
+    float Kff;
 } hallGains;
 
 typedef hallGains *hallGainParams;

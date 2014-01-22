@@ -377,8 +377,8 @@ void rgltrRunController(void) {
 
     if(!is_ready) { return; }    
 
-    attEstimatePose();  // Update attitude estimate
-    updated_bemf = updateBEMF();
+    //attEstimatePose();  // Update attitude estimate
+    //updated_bemf = updateBEMF();
     if (crankCalibrated == 1 && updated_bemf == 1) {
 //        wing_status.count_calib++;
 //        if (wing_status.count_calib % 100 == 0) {
@@ -389,12 +389,12 @@ void rgltrRunController(void) {
     }
 
 
-    rateProcess();      // Update limited_reference
-    slewProcess(&reference, &limited_reference); // Apply slew rate limiting
+    //rateProcess();      // Update limited_reference
+    //slewProcess(&reference, &limited_reference); // Apply slew rate limiting
 
-    attGetQuat(&pose);
-    calculateError(&error);    
-    calculateOutputs(&error, &output);
+    //attGetQuat(&pose);
+    //calculateError(&error);
+    //calculateOutputs(&error, &output);
 
     if ((crankAngle > (wing_status.stopPos - 5) && crankAngle < (wing_status.stopPos + 5) && wing_status.enabled == 1) || wing_status.stopped == 1) {
         LED_RED = 1;
@@ -408,7 +408,7 @@ void rgltrRunController(void) {
 //        LED_RED = 0;
 //    }
     
-    applyOutputs(&output);        
+    //applyOutputs(&output);
     
     if(is_logging) {
         logTrace(&error, &output);

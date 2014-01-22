@@ -340,7 +340,7 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
     if (hall_t1_ticks > lastMoveTime) // turn off if done running
     { //        hallPIDSetInput(0, 0, 0);    don't reset state when done run, keep for recording telemetry
         hallPIDObjs.onoff = 0;
-        if (lastMoveTime > 0) {
+        if (hall_t1_ticks > 1000) {
             Nop();
         }
         //hallGetSetpoint();
@@ -392,11 +392,11 @@ static void hallSetControl() {
     hallPIDObjs.v_error = hallPIDObjs.v_input - hallbemf[0];
     //Update values
 
-    if (hallPIDObjs.p_error < -100) {
-        k = hallPIDObjs.p_input;
-        j = motor_count[0];
-        Nop();
-    }
+//    if (hallPIDObjs.p_error < -100) {
+//        k = hallPIDObjs.p_input;
+//        j = motor_count[0];
+//        Nop();
+//    }
 
     hallUpdatePID(&(hallPIDObjs));
     if (hallPIDObjs.onoff) {

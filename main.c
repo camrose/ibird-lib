@@ -89,7 +89,7 @@
 
 // ==== CONSTANTS =============================================
 #define FCY                         (40000000)  // 40 MIPS   
-#define REGULATOR_FCY               (500)       // 300 Hz
+#define REGULATOR_FCY               (300)       // 300 Hz
 #define RADIO_FCY                   (200)       // 200 Hz
 #define RADIO_TX_QUEUE_SIZE         (40)        // 40 Outgoing
 #define RADIO_RX_QUEUE_SIZE         (40)        // 40 Incoming
