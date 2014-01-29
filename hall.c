@@ -40,6 +40,8 @@ int t2_ticks;
 long old_wing_time, wing_time, wing_delta; // time of last event
 long motor_count[1]; // 0 = left 1 = right counts on sensor
 
+unsigned char timed_move;
+
 //MoveQueue hallMoveq;
 //moveCmdT hallCurrentMove, hallIdleMove, hallManualMove;
 
@@ -185,6 +187,7 @@ void hallSetup() {
     hallInitPIDVelProfile();
 
     lastMoveTime = 0;
+    timed_move = 1;
     //  initialize PID structures before starting Timer1
     hallPIDSetInput(temp_in, lastMoveTime);
 
@@ -263,7 +266,7 @@ void hallSetVelProfile(hallVelCmdParams params) {
 
 void hallPIDSetInput(unsigned int input, unsigned int run_time) {
     unsigned long temp;
-    hallPIDObjs.v_input = input;
+    hallPIDObjs.v_input = input*EMF_CONV;
     hallPIDObjs.run_time = run_time;
     hallPIDObjs.start_time = hall_t1_ticks;
     //zero out running PID values
@@ -275,6 +278,10 @@ void hallPIDSetInput(unsigned int input, unsigned int run_time) {
 
     temp = hall_t1_ticks; // need atomic read due to interrupt
     lastMoveTime = temp + (unsigned long) run_time; // only one run time for both sides
+
+    if (run_time == 1) {
+        timed_move = 0;
+    }
     // set initial time for next move set point
 
     /*   need to set index =0 initial values */
@@ -340,9 +347,6 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
     if (hall_t1_ticks > lastMoveTime) // turn off if done running
     { //        hallPIDSetInput(0, 0, 0);    don't reset state when done run, keep for recording telemetry
         hallPIDObjs.onoff = 0;
-        if (hall_t1_ticks > 1000) {
-            Nop();
-        }
         //hallGetSetpoint();
         //        hallPIDSetInput(1, 0, 0);
     } else // update velocity setpoints if needed - only when running
@@ -399,15 +403,15 @@ static void hallSetControl() {
 //    }
 
     hallUpdatePID(&(hallPIDObjs));
-    if (hallPIDObjs.onoff) {
-        //Might want to change this in the future, if we want to track error
-        //even when the motor is off.
-        //Set PWM duty cycle
-        SetDCMCPWM(MC_CHANNEL_PWM1, hallPIDObjs.output, 0); //PWM1.L
-    }//end of if (on / off)
-    else { //if PID loop is off
-        SetDCMCPWM(MC_CHANNEL_PWM1, 0, 0);
-    }
+//    if (hallPIDObjs.onoff) {
+//        //Might want to change this in the future, if we want to track error
+//        //even when the motor is off.
+//        //Set PWM duty cycle
+//        SetDCMCPWM(MC_CHANNEL_PWM1, hallPIDObjs.output, 0); //PWM1.L
+//    }//end of if (on / off)
+//    else { //if PID loop is off
+//        SetDCMCPWM(MC_CHANNEL_PWM1, 0, 0);
+//    }
 }
 
 static void hallUpdatePID(pidPos *pid) {
@@ -521,4 +525,8 @@ void hallInitPIDObj(pidObj *pid, int Kp, int Ki, int Kd, int Kaw, int Kff) {
 //todo: a getter should not return a pointer; this is unsafe behavior.
 long* hallGetMotorCounts() {
     return motor_count;
+}
+
+int hallGetBEMF() {
+    return hallbemf[0];
 }

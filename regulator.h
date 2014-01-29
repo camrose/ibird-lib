@@ -105,6 +105,7 @@ void rgltrSetMode(unsigned char flag);
 void rgltrSetOff(void);
 void rgltrSetTrack(void);
 void rgltrSetRemote(void);
+void rgltrSetHall(void);
 
 // Set 3 axes offsets
 void rgltrSetOffsets(float *offsets);

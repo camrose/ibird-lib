@@ -225,6 +225,8 @@ void rgltrSetMode(unsigned char flag) {
         rgltrSetTrack();
     } else if(flag == REG_REMOTE_CONTROL) {
         rgltrSetRemote();
+    } else if(flag == REG_TRACK_HALL) {
+        rgltrSetHall();
     }
         
 }
@@ -234,6 +236,7 @@ void rgltrSetOff(void) {
     ctrlStop(&yawPid);
     ctrlStop(&pitchPid);
     ctrlStop(&thrustPid);
+    hallPIDOff();
     servoStop();
 }
 
@@ -250,8 +253,17 @@ void rgltrSetRemote(void) {
     ctrlStop(&yawPid);
     ctrlStop(&pitchPid);
     ctrlStop(&thrustPid);
+    hallPIDOff();
     servoStart();
-}    
+}
+
+void rgltrSetHall(void) {
+    reg_mode = REG_TRACK_HALL;
+    ctrlStart(&yawPid);
+    ctrlStart(&pitchPid);
+    hallPIDOn();
+    servoStart();
+}
 
 void rgltrSetYawRateFilter(RateFilterParams params) {
 
@@ -377,39 +389,18 @@ void rgltrRunController(void) {
 
     if(!is_ready) { return; }    
 
-    //attEstimatePose();  // Update attitude estimate
+    attEstimatePose();  // Update attitude estimate
     //updated_bemf = updateBEMF();
-    if (crankCalibrated == 1 && updated_bemf == 1) {
-//        wing_status.count_calib++;
-//        if (wing_status.count_calib % 100 == 0) {
-//            wing_status.count_calib = 0;
-//            calibCrank();
-//        }
-        updateCrank();
-    }
 
+    rateProcess();      // Update limited_reference
+    slewProcess(&reference, &limited_reference); // Apply slew rate limiting
 
-    //rateProcess();      // Update limited_reference
-    //slewProcess(&reference, &limited_reference); // Apply slew rate limiting
+    attGetQuat(&pose);
+    calculateError(&error);
+    calculateOutputs(&error, &output);
 
-    //attGetQuat(&pose);
-    //calculateError(&error);
-    //calculateOutputs(&error, &output);
+    applyOutputs(&output);
 
-    if ((crankAngle > (wing_status.stopPos - 5) && crankAngle < (wing_status.stopPos + 5) && wing_status.enabled == 1) || wing_status.stopped == 1) {
-        LED_RED = 1;
-        wing_status.stopped = 1;
-        output.thrust = 0.0;
-    }
-    
-//    if (adcGetBEMFR() < 3) {
-//        LED_RED = 1;
-//    } else {
-//        LED_RED = 0;
-//    }
-    
-    //applyOutputs(&output);
-    
     if(is_logging) {
         logTrace(&error, &output);
     }
@@ -420,21 +411,10 @@ void rgltrRunController(void) {
 
 static float runYawControl(float yaw) {
 
-    /*float u;
-
-    u = yawPid.offset;
-
-    if (u > yawPid.umax) {
-        u = yawPid.umax;
-    } else if (u < yawPid.umin) {
-        u = yawPid.umin;
-    }
-
-    return u;*/
     if(yaw_filter_ready) {
        return ctrlRunPid(&yawPid, yaw, &yawRateFilter);
     } else {
-        return ctrlRunPid(&yawPid, yaw, NULL);
+       return ctrlRunPid(&yawPid, yaw, NULL);
     }
 }
 
@@ -523,6 +503,12 @@ static void calculateOutputs(RegulatorError *error, RegulatorOutput *output) {
         output->steer = runYawControl(error->yaw_err);
         output->elevator = runPitchControl(error->pitch_err);        
         output->thrust = runRollControl(error->pitch_err);
+
+    } else if(reg_mode == REG_TRACK_HALL){
+        
+        output->steer = runYawControl(error->yaw_err);
+        output->elevator = runPitchControl(error->pitch_err);
+        output->thrust = (float) ((float) hallGetOutput())/(2.0*(float) PTPER);
 
     } else {
 
@@ -769,7 +755,7 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         storage->u[0] = hallGetOutput();
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
-        storage->bemf[0] = bemf[0];
+        storage->bemf[0] = hallGetBEMF();
         motor_counts = hallGetMotorCounts();
         storage->bemf[1] = motor_counts[0];
         //storage->bemf[1] = (int) (hallGetError()/1000);

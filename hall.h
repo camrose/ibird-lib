@@ -21,6 +21,8 @@
 // STRIDE_TICKS should be easily divisible
 #define STRIDE_TICKS (COUNT_REVS*16)  // number of t1 ticks/leg revolution
 
+#define EMF_CONV 65 // test val
+
 
 #define NUM_HALL_PIDS 1
 
@@ -112,5 +114,6 @@ void hallZeroPos();
 long* hallGetMotorCounts();
 int hallGetOutput();
 long hallGetError();
+int hallGetBEMF();
 
 #endif // __HALL_H
