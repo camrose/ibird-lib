@@ -344,7 +344,7 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 
     hall_t1_ticks++;
 
-    if (hall_t1_ticks > lastMoveTime) // turn off if done running
+    if (hall_t1_ticks > lastMoveTime && timed_move == 1) // turn off if done running
     { //        hallPIDSetInput(0, 0, 0);    don't reset state when done run, keep for recording telemetry
         hallPIDObjs.onoff = 0;
         //hallGetSetpoint();

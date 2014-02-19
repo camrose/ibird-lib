@@ -751,8 +751,8 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         memcpy(&storage->gyro_data, gyrodat, 3*sizeof(int));
         xlGetXYZ(xldat);
         memcpy(&storage->xl_data, xldat, 3*sizeof(int));
-        //storage->u[0] = output->thrust;
-        storage->u[0] = hallGetOutput();
+        storage->u[0] = output->thrust;
+        //storage->u[0] = hallGetOutput();
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
         storage->bemf[0] = hallGetBEMF();
