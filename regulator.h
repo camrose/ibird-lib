@@ -149,6 +149,9 @@ void rgltrSetTempRot(Quaternion *rot);
  */
 void rgltrSetRemoteControlValues(float thrust, float steer, float elevator);
 
+void rgltrStartEight(void);
+void rgltrStopEight(void);
+
 /**
  * Execute control loop iteration. This method should be called regularly every
  * ts seconds as defined in rgltrSetup

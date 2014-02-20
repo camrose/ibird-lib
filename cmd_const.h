@@ -62,8 +62,6 @@
 #define CMD_PING                        (0x12)      // Do nothing
 #define CMD_ECHO                        (0x13)      // send back the received packet
 
-#define CMD_STOP_CLOSED                 (0x15)      // Stop wings in closed position
-#define CMD_CALIB_CRANK                 (0x16)
 #define CMD_SET_TEMP_ROT                (0x17)
 #define CMD_ROTATE_REF_GLOBAL           (0x18)      //
 #define CMD_ROTATE_REF_LOCAL            (0x19)      //
@@ -123,6 +121,8 @@
 #define CMD_SET_HALL_GAINS              (0x56)      // Set PID gains for thrust regulation
 #define CMD_SET_HALL_INPUT              (0x57)      // Set thrust input (this may not belong here)
 #define CMD_HALL_PID_ON                 (0x58)      // Turn on hall thrust control
+
+#define CMD_TOGGLE_EIGHT				(0x59)		// Toggle figure 8
 
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use

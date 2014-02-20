@@ -122,6 +122,8 @@ static void cmdSetRemoteControlValues(MacPacket packet);
 static void cmdSetRateMode(MacPacket packet);
 static void cmdSetRateSlew(MacPacket packet);
 
+static void cmdToggleEight(MacPacket packet);
+
 static void cmdRequestRawFrame(MacPacket packet);
 static void cmdResponseRawFrame(MacPacket packet);
 static void cmdSetBackgroundFrame(MacPacket packet);
@@ -204,6 +206,8 @@ unsigned int cmdSetup(unsigned int queue_size) {
 
     cmd_func[CMD_SET_RATE_MODE] = &cmdSetRateMode;
     cmd_func[CMD_SET_RATE_SLEW] = &cmdSetRateSlew;
+
+    cmd_func[CMD_TOGGLE_EIGHT] = &cmdToggleEight;
 
     cmd_func[CMD_RAW_FRAME_REQUEST] = &cmdRequestRawFrame;
     cmd_func[CMD_RAW_FRAME_RESPONSE] = &cmdResponseRawFrame;
@@ -568,6 +572,17 @@ static void cmdSetRateSlew(MacPacket packet) {
     Rate slew = (Rate)payGetData(pld);
     rateSetGlobalSlew(slew);
 
+}
+
+static void cmdToggleEight(MacPacket packet) {
+    Payload pld = macGetPayload(packet);
+    unsigned char flag = *(payGetData(pld));
+
+    if(flag == 0) {
+        rgltrStopEight();
+    } else if(flag == 1) {
+        rgltrStartEight();
+    }
 }
 
 // ====== Telemetry and Sensors ===============================================

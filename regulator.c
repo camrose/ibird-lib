@@ -91,13 +91,6 @@ typedef struct {
     float roll_err;
 } RegulatorError;
 
-typedef struct {
-    unsigned char stopped;
-    unsigned char enabled;
-    int stopPos;
-    int count_calib;
-} WingInst;
-
 #define YAW_SAT_MAX         (1.0)
 #define YAW_SAT_MIN         (-1.0)
 #define PITCH_SAT_MAX       (1.0)
@@ -113,11 +106,12 @@ CtrlPidParamStruct yawPid, pitchPid, thrustPid;
 DigitalFilterStruct yawRateFilter, pitchRateFilter, rollRateFilter;
 
 // State info
-static unsigned char is_ready = 0, is_logging = 0, temp_rot_active = 0;
+static unsigned char is_ready = 0, is_logging = 0, temp_rot_active = 0, fig_eight =0;
 static unsigned char yaw_filter_ready = 0, pitch_filter_ready = 0, roll_filter_ready = 0;
 static RegulatorMode reg_mode;
 static RegulatorOutput rc_outputs;
 static Quaternion reference, limited_reference, pose, temp_rot;
+static int eight_stage = 0;
 
 // Telemetry buffering
 static RegulatorStateStruct reg_states[2];
@@ -131,6 +125,7 @@ static int updateBEMF();
 static void updateCrank();
 
 static void calculateError(RegulatorError *error);
+static void calculateError2(Quaternion *ref_temp, RegulatorError *error);
 static void filterError(RegulatorError *error);
 static void calculateOutputs(RegulatorError *error, RegulatorOutput *output);
 static void applyOutputs(RegulatorOutput *output);
@@ -381,13 +376,90 @@ void rgltrGetState(RegulatorState dst) {
     
 }
 
+void rgltrStartEight(void) {
+    fig_eight = 1;
+    eight_stage = 0;
+}
+
+void rgltrStopEight(void) {
+    fig_eight = 0;
+    eight_stage = 0;
+}
+
 void rgltrRunController(void) {
     
     RegulatorError error;        
     RegulatorOutput output;
     int updated_bemf;
+    Quaternion ref_temp;
+    RateStruct rate_set;
 
     if(!is_ready) { return; }    
+
+    if(fig_eight) {
+        if (eight_stage == 0) {
+            ref_temp.w = 0.8214;
+            ref_temp.x = 0.1786;
+            ref_temp.y = 0.3830;
+            ref_temp.z = -0.3830;
+            rgltrSetQuatRef(&ref_temp);
+            eight_stage = 1;
+        } else if (eight_stage == 1) {
+            ref_temp.w = 0.8214;
+            ref_temp.x = 0.1786;
+            ref_temp.y = 0.3830;
+            ref_temp.z = -0.3830;
+            calculateError2(&ref_temp,&error);
+            if (error.yaw_err < 0.04 && error.yaw_err > -0.04) {
+                rate_set.pitch_rate = 0;
+                rate_set.yaw_rate = 1.5;
+                rate_set.roll_rate = 0;
+                rateSetGlobalSlew(&rate_set);
+                rateEnable();
+                eight_stage = 2;
+            }
+        } else if (eight_stage == 2) {
+            ref_temp.w = 0.6409;
+            ref_temp.x = -0.2988;
+            ref_temp.y = 0.2988;
+            ref_temp.z = 0.6409;
+            calculateError2(&ref_temp,&error);
+            if (error.yaw_err < 0.04 && error.yaw_err > -0.04) {
+                rate_set.pitch_rate = 0;
+                rate_set.yaw_rate = -1.5;
+                rate_set.roll_rate = 0;
+                rateSetGlobalSlew(&rate_set);
+                rateEnable();
+                eight_stage = 3;
+            }
+        } else if (eight_stage == 3) {
+            ref_temp.w = 0.6409;
+            ref_temp.x = 0.2988;
+            ref_temp.y = 0.2988;
+            ref_temp.z = -0.6409;
+            calculateError2(&ref_temp,&error);
+            if (error.yaw_err < 0.04 && error.yaw_err > -0.04) {
+                eight_stage = 4;
+            }
+        } else if (eight_stage == 4) {
+            ref_temp.w = 0.6409;
+            ref_temp.x = -0.2988;
+            ref_temp.y = 0.2988;
+            ref_temp.z = 0.6409;
+            calculateError2(&ref_temp,&error);
+            if (error.yaw_err < 0.04 && error.yaw_err > -0.04) {
+                rateDisable();
+                ref_temp.w = 0.0;
+                ref_temp.x = -0.4226;
+                ref_temp.y = 0.0;
+                ref_temp.z = 0.9063;
+                rgltrSetQuatRef(&ref_temp);
+                eight_stage = 5;
+            }
+        } else if (eight_stage == 5) {
+            
+        }
+    }
 
     attEstimatePose();  // Update attitude estimate
     //updated_bemf = updateBEMF();
@@ -446,6 +518,34 @@ static void applyTempRot(Quaternion *input, Quaternion *output) {
     } else {
         quatCopy(output, input);
     }
+}
+
+static void calculateError2(Quaternion *ref_temp, RegulatorError *error) {
+
+    Quaternion conj_quat, err_quat;
+    bams16_t a_2;
+    float scale;
+
+    // qref = qpose*qerr
+    // qpose'*qref = qerr
+    quatConj(&pose, &conj_quat);
+    //quatMult(&limited_reference, &conj_quat, &err_quat);
+    quatMult(&conj_quat, ref_temp, &err_quat);
+
+    // q = [cos(a/2), sin(a/2)*[x, y, z]]
+    // d[x, y, z] = [q]*a/sin(a/2)
+    if(err_quat.w == 1.0) { // a = 0 case
+        error->yaw_err = 0.0;
+        error->pitch_err = 0.0;
+        error->roll_err = 0.0;
+    } else {
+        a_2 = bams16Acos(err_quat.w); // w = cos(a/2)
+        scale = bams16ToFloatRad(a_2*2)/bams16Sin(a_2); // a/sin(a/2)
+        error->yaw_err = err_quat.z*scale;
+        error->pitch_err = err_quat.y*scale;
+        error->roll_err = err_quat.x*scale;
+    }
+
 }
 
 static void calculateError(RegulatorError *error) {
