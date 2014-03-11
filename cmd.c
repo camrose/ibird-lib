@@ -106,9 +106,6 @@ static void cmdDirDumpResponse(MacPacket packet);
 static void cmdRequestClockUpdate(MacPacket packet);
 static void cmdResponseClockUpdate(MacPacket packet);
 
-static void cmdStopClosed(MacPacket packet);
-static void cmdCalibCrank(MacPacket packet);
-
 static void cmdRotateRefGlobal(MacPacket packet);
 static void cmdRotateRefLocal(MacPacket packet);
 static void cmdSetRegulatorOffsets(MacPacket packet);
@@ -191,9 +188,6 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_SET_ESTIMATE_RUNNING] = &cmdSetEstimateRunning;
 
     cmd_func[CMD_ECHO] = &cmdEcho;
-
-    cmd_func[CMD_STOP_CLOSED] = &cmdStopClosed;
-    cmd_func[CMD_CALIB_CRANK] = &cmdCalibCrank;
 
     cmd_func[CMD_ROTATE_REF_GLOBAL] = &cmdRotateRefGlobal;
     cmd_func[CMD_ROTATE_REF_LOCAL] = &cmdRotateRefLocal;
@@ -447,17 +441,6 @@ static void cmdSetHallGains(MacPacket packet) {
 
 static void cmdHallPIDOn(MacPacket packet) {
     hallPIDOn();
-}
-
-static void cmdStopClosed(MacPacket packet) {
-    Payload pld = macGetPayload(packet);
-    unsigned char flag = *(payGetData(pld));
-    
-    rgltrStopWings(flag);
-}
-
-static void cmdCalibCrank(MacPacket packet) {
-    calibCrank();
 }
 
 static void cmdRotateRefGlobal(MacPacket packet) {

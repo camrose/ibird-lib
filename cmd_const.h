@@ -122,7 +122,7 @@
 #define CMD_SET_HALL_INPUT              (0x57)      // Set thrust input (this may not belong here)
 #define CMD_HALL_PID_ON                 (0x58)      // Turn on hall thrust control
 
-#define CMD_TOGGLE_EIGHT				(0x59)		// Toggle figure 8
+#define CMD_TOGGLE_EIGHT		(0x59)		// Toggle figure 8
 
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use

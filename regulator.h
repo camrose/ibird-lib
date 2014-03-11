@@ -167,8 +167,6 @@ void rgltrRunController(void);
 void rgltrGetState(RegulatorState state);
 void rgltrStartLogging(void);
 void rgltrStopLogging(void);
-void calibCrank(void);
-void rgltrStopWings(unsigned char flag);
 
 
 #endif  // __REGULATOR_H

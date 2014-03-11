@@ -122,7 +122,6 @@ static float runYawControl(float yaw);
 static float runPitchControl(float pitch);
 static float runRollControl(float roll);
 static int updateBEMF();
-static void updateCrank();
 
 static void calculateError(RegulatorError *error);
 static void calculateError2(Quaternion *ref_temp, RegulatorError *error);
@@ -143,7 +142,6 @@ int bemfVals[4];
 int crankCalibrated;
 unsigned long curr_time;
 unsigned long prev_time;
-WingInst wing_status;
 
 // =========== Public Functions ===============================================
 
@@ -203,10 +201,6 @@ void rgltrSetup(float ts) {
     crankCalibrated = 0;
     curr_time = 0;
     prev_time = 0;
-    wing_status.stopPos = 0;
-    wing_status.enabled = 0;
-    wing_status.stopped = 0;
-    wing_status.count_calib = 0;
 }
 
 void rgltrSetMode(unsigned char flag) {
@@ -709,127 +703,8 @@ int updateBEMF() {
 //    bemfLast[1] = bemf[1];
 }
 
-void rgltrStopWings(unsigned char flag) {
-    if (flag == 0) {
-        wing_status.enabled = 0;
-        wing_status.stopped = 0;
-    } else if (flag == 1) {
-        wing_status.stopPos = 40 % 360;
-        wing_status.enabled = 1;
-    } else {
-        wing_status.stopPos = 40 % 180;
-        wing_status.enabled = 1;
-    }
-}
 
-void calibCrank() {
-    LED_RED = 0;
-    int max_bemf_peak1 = 0;
-    int max_bemf_peak2 = 0;
-    int min_bemf_peak1 = 0;
-    int min_bemf_peak2 = 0;
-    int holder;
-    
-    while (max_bemf_peak1 == 0 || max_bemf_peak2 == 0) {
-        if (bemfHist[0][0] < bemfHist[0][1] && bemfHist[0][1] > bemfHist[0][2]) {
-            if (max_bemf_peak1 == 0) {
-                max_bemf_peak1 = bemfHist[0][1];
-            } else if (bemfHist[0][1] != max_bemf_peak1 && max_bemf_peak2 == 0) {
-                max_bemf_peak2 = bemfHist[0][1];
-            }
-        }
-        updateBEMF();
-    }
 
-    if (max_bemf_peak2 > max_bemf_peak1) {
-        crankAngle = 0;
-    } else {
-        crankAngle = 180;
-    }
-
-    while (min_bemf_peak1 == 0 || min_bemf_peak2 == 0) {
-        if (bemfHist[0][0] > bemfHist[0][1] && bemfHist[0][1] < bemfHist[0][2]) {
-            if (min_bemf_peak1 == 0) {
-                min_bemf_peak1 = bemfHist[0][1];
-            } else if (bemfHist[0][1] != min_bemf_peak1 && min_bemf_peak2 == 0) {
-                min_bemf_peak2 = bemfHist[0][1];
-            }
-        }
-        updateBEMF();
-    }
-
-    if (crankAngle == 0) {
-        holder = max_bemf_peak2;
-        max_bemf_peak2 = max_bemf_peak1;
-        max_bemf_peak1 = holder;
-    } else {
-        holder = min_bemf_peak2;
-        min_bemf_peak2 = min_bemf_peak1;
-        min_bemf_peak1 = holder;
-    }
-
-    zone = 0;
-    if (crankAngle == 0) {
-        zone = 4;
-        crankAngle = 270;
-    } else {
-        zone = 2;
-        crankAngle = 90;
-    }
-    bemfVals[0] = max_bemf_peak1;
-    bemfVals[1] = min_bemf_peak1;
-    bemfVals[2] = max_bemf_peak2;
-    bemfVals[3] = min_bemf_peak2;
-
-    crankCalibrated = 1;
-}
-
-static void updateCrank() {
-    int inter = 0;
-    unsigned long hold_time;
-    double time_diff;
-    float c = 26.0396;
-
-    unsigned char do_integ = 1;
-
-    if (bemfHist[0][0] > bemfHist[0][1] && bemfHist[0][1] < bemfHist[0][2]) {
-        if (zone == 1) {
-            zone = 2;
-            crankAngle = 90;
-            do_integ = 0;
-        } else {
-            zone = 4;
-            crankAngle = 270;
-            do_integ = 0;
-        }
-    } else if (bemfHist[0][0] < bemfHist[0][1] && bemfHist[0][1] > bemfHist[0][2]) {
-        if (zone == 4) {
-            zone = 1;
-            crankAngle = 0;
-            do_integ = 0;
-        } else {
-            zone = 3;
-            crankAngle = 180;
-            do_integ = 0;
-        }
-    }
-    if (zone == 1) {
-        inter = (bemf[0] - bemfVals[zone])/(bemfVals[zone-1] - bemfVals[zone]);
-    } else if (zone == 2) {
-        inter = (bemf[0] - bemfVals[zone])/(bemfVals[zone-1] - bemfVals[zone]);
-    } else if (zone == 3) {
-        inter = (bemf[0] - bemfVals[zone])/(bemfVals[zone-1] - bemfVals[zone]);
-    } else {
-        inter = (bemf[0] - bemfVals[0])/(bemfVals[zone-1] - bemfVals[0]);
-    }
-
-    //crankAngle = 90 + 90*(zone - 1) - 90*inter;
-    if (do_integ) {
-        hold_time = curr_time - prev_time;
-        time_diff = ((double)hold_time)/1000.0;
-        crankAngle = (float)(fmod((crankAngle + c*bemfHist[0][0]*(time_diff)), 360.0));
-    }
-}
 
 static void logTrace(RegulatorError *error, RegulatorOutput *output) {
 
