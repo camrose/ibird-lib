@@ -708,34 +708,34 @@ int updateBEMF() {
 
 static void logTrace(RegulatorError *error, RegulatorOutput *output) {
 
-    int xldat[3];
-    int gyrodat[3];
+    float xldat[3];
+    float gyrodat[3];
     long* motor_counts;
     RegulatorStateStruct *storage;
     
     storage = ppbuffReadInactive(&reg_state_buff);
     
     if(storage != NULL) {
-        quatCopy(&storage->ref, &limited_reference);
+        //quatCopy(&storage->ref, &limited_reference);
         quatCopy(&storage->pose, &pose);        
         //storage->error.w = 0.0;
         //storage->error.x = error->roll_err;
         //storage->error.y = error->pitch_err;
         //storage->error.z = error->yaw_err;
-        gyroGetIntXYZ(gyrodat);
-        memcpy(&storage->gyro_data, gyrodat, 3*sizeof(int));
-        xlGetXYZ(xldat);
-        memcpy(&storage->xl_data, xldat, 3*sizeof(int));
-        storage->u[0] = output->thrust;
+        gyroGetRadXYZ(gyrodat);
+        memcpy(&storage->gyro_data, gyrodat, 3*sizeof(float));
+        xlGetFloatXYZ(xldat);
+        memcpy(&storage->xl_data, xldat, 3*sizeof(float));
+        //storage->u[0] = output->thrust;
         //storage->u[0] = hallGetOutput();
-        storage->u[1] = output->steer;
-        storage->u[2] = output->elevator;
-        storage->bemf[0] = hallGetBEMF();
-        motor_counts = hallGetMotorCounts();
-        storage->bemf[1] = motor_counts[0];
+        //storage->u[1] = output->steer;
+        //storage->u[2] = output->elevator;
+        //storage->bemf[0] = hallGetBEMF();
+        //motor_counts = hallGetMotorCounts();
+        //storage->bemf[1] = motor_counts[0];
         //storage->bemf[1] = (int) (hallGetError()/1000);
         //storage->crank = crankAngle;
-        storage->crank = (float) hallGetError();
+        //storage->crank = (float) hallGetError();
         storage->time = sclockGetLocalMillis();
     }
     ppbuffFlip(&reg_state_buff);

@@ -298,7 +298,8 @@ static void batteryLowCallback(void) {
  */
 void __attribute__((interrupt, no_auto_psv)) _T5Interrupt(void) {
     
-    gyroReadXYZ();    
+    gyroReadXYZ();
+    xlReadXYZ();
     rgltrRunController();    
     telemLog();
     telemProcess();    
