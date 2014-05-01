@@ -612,8 +612,8 @@ static void cmdGetMemContents(MacPacket packet) {
                 data_packet = radioRequestPacket(tx_data_size);
             }
 
-            macSetDestAddr(data_packet, 0x1020);
-            macSetDestPan(data_packet, 0x1005);
+            macSetDestAddr(data_packet, macGetSrcAddr(packet));
+            macSetDestPan(data_packet, macGetSrcPan(packet));
             pld = macGetPayload(data_packet);
 
             dfmemRead(page, j, tx_data_size, payGetData(pld));
