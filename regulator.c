@@ -735,7 +735,7 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         storage->bemf[1] = motor_counts[0];
         //storage->bemf[1] = (int) (hallGetError()/1000);
         //storage->crank = crankAngle;
-        storage->crank = (float) hallGetError();
+        //storage->crank = (float) hallGetError();
         storage->time = sclockGetLocalMillis();
     }
     ppbuffFlip(&reg_state_buff);

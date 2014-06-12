@@ -158,6 +158,8 @@ static void cmdHallPIDOn(MacPacket packet);
 static void cmdEcho(MacPacket packet);
 static void cmdNop(MacPacket packet);
 
+static void cmdStartStrobe(MacPacket packet);
+
 // =============== Public Functions ============================================
 unsigned int cmdSetup(unsigned int queue_size) {
 
@@ -235,6 +237,8 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_SET_HALL_INPUT] = &cmdHallPIDSetInput;
     cmd_func[CMD_SET_HALL_GAINS] = &cmdSetHallGains;
     cmd_func[CMD_HALL_PID_ON] = &cmdHallPIDOn;
+
+    cmd_func[CMD_START_STROBE] = &cmdStartStrobe;
 
     return 1;
     
@@ -927,6 +931,13 @@ static void cmdEcho(MacPacket packet) {
 static void cmdNop(MacPacket packet) {
             
     Nop();
+}
+
+static void cmdStartStrobe(MacPacket packet) {
+    Payload pld = macGetPayload(packet);
+    unsigned char flag = *(payGetData(pld));
+
+    lstrobeStart();
 }
 
 

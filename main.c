@@ -78,6 +78,7 @@
 #include "spi_controller.h"
 #include "adc_pid.h"
 #include "hall.h"
+#include "lstrobe.h"
 
 // Other utilities
 #include "larray.h"
@@ -184,9 +185,9 @@ void setupAll(void) {
     //camSetup(cam_frames, NUM_CAM_FRAMES);   // Camera device
     
     // Accelerometer setup
-    //xlSetup();
-    //xlSetRange(16);                         // +- 16 g range
-    //xlSetOutputRate(0, 0x0c);               // 800 Hz
+    xlSetup();
+    xlSetRange(16);                         // +- 16 g range
+    xlSetOutputRate(0, 0x0c);               // 800 Hz
     
     gyroSetup();
     gyroSetDeadZone(25);
@@ -232,6 +233,8 @@ void setupAll(void) {
     attStart();     // Start attitude estimation 
     EnableIntT5;    // Start control loop
     EnableIntT6;
+
+    lstrobeSetup();
 
     radioSetWatchdogState(1);
     radioSetWatchdogTime(400);

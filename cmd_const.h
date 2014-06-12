@@ -124,6 +124,8 @@
 
 #define CMD_TOGGLE_EIGHT		(0x59)		// Toggle figure 8
 
+#define CMD_START_STROBE                (0x6A)      // Start strobe
+
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use
 
