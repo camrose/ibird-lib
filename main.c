@@ -70,7 +70,6 @@
 #include "init_default.h"
 #include "led.h"
 #include "timer.h"
-#include "cam.h"
 #include "xl.h"
 #include "gyro.h"
 #include "dfmem.h"
@@ -79,6 +78,7 @@
 #include "adc_pid.h"
 #include "hall.h"
 #include "lstrobe.h"
+#include "line_sensor.h"
 
 // Other utilities
 #include "larray.h"
@@ -92,12 +92,15 @@
 #define FCY                         (40000000)  // 40 MIPS   
 #define REGULATOR_FCY               (300)       // 300 Hz
 #define RADIO_FCY                   (200)       // 200 Hz
+//#define LS_FCY                      (15385)         // 2 Hz
+#define LS_FCY                      (6000)         // 2 Hz
 #define RADIO_TX_QUEUE_SIZE         (40)        // 40 Outgoing
 #define RADIO_RX_QUEUE_SIZE         (40)        // 40 Incoming
 
 #define DIRECTORY_SIZE              (20)        // Network size
-#define NUM_CAM_FRAMES              (1)         // Camera driver frames
 #define TELEM_SUBSAMPLE             (1)         // Telemetry subsample default
+
+#define NUM_CAM_FRAMES              (2)         // Number of line sensor frames in queue
 
 // ==== FUNCTION STUBS =========================================
 static void processRadioBuffer(void);
@@ -115,7 +118,8 @@ void _T5Interrupt(void);
 void _T6Interrupt(void);
 
 // ==== STATIC VARIABLES =======================================
-static CamFrameStruct cam_frames[NUM_CAM_FRAMES];
+
+static LineCamStruct cam_frames[NUM_CAM_FRAMES];
 
 // ==== FUNCTION BODIES ========================================
 int main(void) {
@@ -183,6 +187,7 @@ void setupAll(void) {
     // as the accelerometer. Make sure to set up camera module first!
     dfmemSetup();                           // Flash memory device
     //camSetup(cam_frames, NUM_CAM_FRAMES);   // Camera device
+    lsSetup(cam_frames, NUM_CAM_FRAMES, LS_FCY);
     
     // Accelerometer setup
     xlSetup();

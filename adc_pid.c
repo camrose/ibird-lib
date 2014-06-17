@@ -14,7 +14,9 @@
 static void adcSetupPeripheral(void);
 //DMA related functions
 static void initDma0(void);
+static void initDma5(void);
 void __attribute__((__interrupt__)) _DMA0Interrupt(void);
+void __attribute__((__interrupt__)) _DMA5Interrupt(void);
 
 
 //Variables to store values as they come out of the DMA buffer
@@ -22,10 +24,12 @@ static unsigned int adc_bemfL;
 static unsigned int adc_bemfR;
 static unsigned int adc_battery;
 static unsigned int adc_AN3;
+static unsigned int adc_line;
 
 void adcSetup(void){
 	adcSetupPeripheral();
 	initDma0(); //DMA is needed to read multiple values from the ADC core
+        initDma5();
 }
 
 static void adcSetupPeripheral(void){
@@ -110,6 +114,45 @@ static void adcSetupPeripheral(void){
         
 	IFS0bits.AD1IF = 0; // Clear the A/D interrupt flag bit
 	IEC0bits.AD1IE = 0; //Disable A/D interrupt
+        
+        // ADC 2 conig for line sensor
+        
+        AD2CON1bits.ADON = 0;       //disable
+        AD2CON1bits.ADSIDL = 0;     //continue in idle mode
+        AD2CON1bits.AD12B = 1;      //10 bit mode
+        AD2CON1bits.FORM = 0b00;    //integer (0000 dddd dddd dddd) format output
+        AD2CON1bits.SSRC = 0b111;   //Sample clock source based on PWM
+        AD2CON1bits.SIMSAM = 1;     //Sample channels simultaneously
+        AD2CON1bits.ASAM = 1;       //Auto sampling on
+        AD2CON1bits.ADDMABM = 1;
+
+        AD2CON2bits.VCFG = 0b000;   //Vdd is pos. ref and Vss is neg. ref.
+        AD2CON2bits.CSCNA = 1;      //scan inputs
+        AD2CON2bits.CHPS = 0b00;    //Convert channels 0 and 1
+        AD2CON2bits.SMPI = 0b0000;  //Interrupt after 3 conversions (depends on CHPS and SIMSAM)
+        AD2CON2bits.BUFM = 0;       //Always fill conversion buffer from first element
+        AD2CON2bits.ALTS = 0;       //Alternate MUXes for analog input selection
+
+        AD2CON3bits.ADRC = 0;       //Derive conversion clock from system clock
+    //    AD1CON3bits.SAMC = 0b00001; //Auto sampling clock period is one Tad
+        AD2CON3bits.ADCS = 0b00000001; // Each TAD is 3 Tcy
+
+        AD2PCFGL = 0xFFDF;          //Enable AN0 - AN3 as analog inputs
+
+        AD2CHS0bits.CH0SA = 0b01011;      //Select AN1 for CH0 +ve input
+        AD2CHS0bits.CH0NA = 0;      //Select Vref- for CH0 -ve input
+
+        AD2CSSL = 0x0020;
+
+        //AD1CHS123bits.CH123SA = 0b1;  //Select AN3 for CH1 +ve input
+        //AD1CHS123bits.CH123NA = 0b00;  //Select Vref- for CH1 -ve input
+
+        AD2CON1bits.ADON = 1;       //enable
+        
+	IFS1bits.AD2IF = 0; // Clear the A/D interrupt flag bit
+	IEC1bits.AD2IE = 0; //Disable A/D interrupt
+
+
 }
 
 
@@ -140,6 +183,10 @@ unsigned int adcGetVBatt(){
 	return adc_battery;
 }
 
+unsigned int adcGetLine(){
+    return adc_line;
+}
+
 
 //////////////////////////////////////////////////////////////////////
 ///////////////      DMA Section     /////////////////////////////////
@@ -149,7 +196,7 @@ unsigned int adcGetVBatt(){
 
 //Buffers need special attribute to be in DMA memory space
 static int  BufferA[3][SAMP_BUFF_SIZE] __attribute__((space(dma)));
-//static int  BufferB[3][SAMP_BUFF_SIZE] __attribute__((space(dma)));
+static int  BufferB[1][SAMP_BUFF_SIZE] __attribute__((space(dma)));
 
 static unsigned int DmaBuffer = 0;
 
@@ -182,6 +229,26 @@ static void initDma0(void)
 	DMA0CONbits.CHEN=1;
 }
 
+static void initDma5(void) {
+        DMA5CONbits.AMODE = 0;			// Configure DMA for Register Indirect w/ post-increment
+	DMA5CONbits.MODE  = 0;			// Configure DMA for Continuous Ping-Pong mode
+
+	DMA5PAD=(int)&ADC2BUF0;
+	//DMA0CNT = (SAMP_BUFF_SIZE*2)-1;
+	DMA5CNT = 0;  //See dsPIC user's manual. 3 analog reads -> DMA0CNT = 3-1 = 2
+	//DMA0CNT = 7;
+
+	DMA5REQ=21; //ADC2 requests
+
+	DMA5STA = __builtin_dmaoffset(BufferB);
+	//DMA0STB = __builtin_dmaoffset(BufferB);
+
+	IFS3bits.DMA5IF = 0;			//Clear the DMA interrupt flag bit
+        IEC3bits.DMA5IE = 1;			//Set the DMA interrupt enable bit
+
+	DMA5CONbits.CHEN=1;
+}
+
 /*****************************************************************************
 * Function Name : _DMA0Interrupt
 * Description   : Interrupt hander for DMA0 , associated with ADC1 here.
@@ -207,5 +274,10 @@ void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void)
         adc_bemfL = 	BufferA[2][0];	//AN11
 	DmaBuffer ^= 1;	 //Toggle between buffers
 	IFS0bits.DMA0IF = 0;		//Clear the DMA0 Interrupt Flag
+}
+
+void __attribute__((interrupt, no_auto_psv)) _DMA5Interrupt(void) {
+    adc_line = BufferB[0][0];
+    IFS3bits.DMA5IF = 0;
 }
 // End DMA section

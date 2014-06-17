@@ -44,7 +44,6 @@
  */
 
 #include <stdio.h>
-#include "cam.h"
 #include "telemetry.h"
 #include "cmd.h"
 #include "cmd_const.h"
@@ -70,6 +69,7 @@
 #include "carray.h"
 #include "slew.h"
 #include "hall.h"
+#include "line_sensor.h"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
@@ -160,6 +160,12 @@ static void cmdNop(MacPacket packet);
 
 static void cmdStartStrobe(MacPacket packet);
 
+static void cmdLsStartCapture(MacPacket packet);
+
+static void cmdGetLineFrame(MacPacket packet);
+
+static void cmdLsSetExposure(MacPacket packet);
+
 // =============== Public Functions ============================================
 unsigned int cmdSetup(unsigned int queue_size) {
 
@@ -239,6 +245,11 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_HALL_PID_ON] = &cmdHallPIDOn;
 
     cmd_func[CMD_START_STROBE] = &cmdStartStrobe;
+
+    cmd_func[CMD_LS_START_CAPTURE] = &cmdLsStartCapture;
+    cmd_func[CMD_LINE_FRAME_REQUEST] = &cmdGetLineFrame;
+
+    cmd_func[CMD_LINE_SET_EXPOSURE] = &cmdLsSetExposure;
 
     return 1;
     
@@ -709,81 +720,141 @@ static void cmdToggleStreaming(MacPacket packet) {
 
 // ====== Camera and Vision ===================================================
 // TODO: Use a struct to simplify the packetization
-static void cmdRequestRawFrame(MacPacket packet) {
-    
+
+static void cmdLsStartCapture(MacPacket packet) {
+    Payload pld = macGetPayload(packet);
+    unsigned char flag = *(payGetData(pld));
+
+    lsStartCapture(flag);
+}
+
+static void cmdLsSetExposure(MacPacket packet) {
+    Payload pld = macGetPayload(packet);
+    unsigned int* data = (unsigned int *)(payGetData(pld));
+
+    lsSetExposure(data[0], data[1]);
+}
+
+static void cmdGetLineFrame(MacPacket packet) {
+
     unsigned int srcAddr, srcPan, height, width, i, temp;
     unsigned int sent, to_send, block_size = 75;
     MacPacket response;
     Payload pld;
-    CamFrame frame;
-    CamRow *row;
-    CvResultStruct info;
+    unsigned char *row;
 
     srcAddr = macGetSrcAddr(packet);
-    srcPan = macGetSrcPan(packet);    
+    srcPan = macGetSrcPan(packet);
 
-    frame = NULL;
+    width = 128;
+    to_send = 128;
+
+    LineCam frame = NULL;
     while(frame == NULL) {
-        frame = camGetFrame();
-    }           
-
-    cvProcessFrame(frame, &info);    
-
-    height = DS_IMAGE_ROWS;
-    width = DS_IMAGE_COLS;
-
-    for(i = 0; i < height; i++) {        
-        row = &(frame->pixels[i]);
-        to_send = width;
-        while(to_send > 0) {            
-            response = radioRequestPacket(block_size + 6);
-            if(response == NULL) { continue; }
-            pld = macGetPayload(response);
-            paySetType(pld, CMD_RAW_FRAME_RESPONSE);
-            paySetStatus(pld, 0);
-            macSetDestAddr(response, srcAddr);
-            macSetDestPan(response, srcPan);
-            temp = frame->frame_num;
-            paySetData(pld, 2, (unsigned char *)&temp);
-            temp = i;
-            payAppendData(pld, 2, 2, (unsigned char*)&temp);
-            temp = width - to_send;
-            payAppendData(pld, 4, 2, (unsigned char*)&temp);
-            temp = (block_size < to_send) ? block_size : to_send;
-            payAppendData(pld, 6, temp, *row + (width - to_send));
-
-            while(!radioEnqueueTxPacket(response));
-
-            to_send = to_send - temp;
-
-        }
-
+        frame = lsGetFrame();
     }
-    sent = 0;
-    while(!sent) {
-        response = radioRequestPacket(10);
+    row = (frame->pixels);
+    while(to_send > 0) {
+        temp = (block_size < to_send) ? block_size : to_send;
+        response = radioRequestPacket(temp + 6);
         if(response == NULL) { continue; }
         pld = macGetPayload(response);
-        paySetType(pld, CMD_CENTROID_REPORT);
-        paySetStatus(pld, 1);
+        paySetType(pld, CMD_LINE_FRAME_RESPONSE);
+        paySetStatus(pld, 0);
         macSetDestAddr(response, srcAddr);
         macSetDestPan(response, srcPan);
-        temp = info.centroid[0];
-        paySetData(pld, 2, (unsigned char*)&temp);
-        temp = info.centroid[1];
+        temp = frame->frame_num;
+        paySetData(pld, 2, (unsigned char *)&temp);
+        temp = 0;
         payAppendData(pld, 2, 2, (unsigned char*)&temp);
-        temp = info.max[0];
+        temp = width - to_send;
         payAppendData(pld, 4, 2, (unsigned char*)&temp);
-        temp = info.max[1];
-        payAppendData(pld, 6, 2, (unsigned char*)&temp);
-        temp = info.max_lum;
-        payAppendData(pld, 8, 1, (unsigned char*)&temp);
-        temp = info.avg_lum;
-        payAppendData(pld, 9, 1, (unsigned char*)&temp);
+        temp = (block_size < to_send) ? block_size : to_send;
+        payAppendData(pld, 6, temp, row + (width - to_send));
+
         while(!radioEnqueueTxPacket(response));
-        sent = 1;
+
+        to_send = to_send - temp;
+
     }
-    camReturnFrame(frame);
+    lsReturnFrame(frame);
+}
+
+static void cmdRequestRawFrame(MacPacket packet) {
+    
+//    unsigned int srcAddr, srcPan, height, width, i, temp;
+//    unsigned int sent, to_send, block_size = 75;
+//    MacPacket response;
+//    Payload pld;
+//    CamFrame frame;
+//    CamRow *row;
+//    CvResultStruct info;
+//
+//    srcAddr = macGetSrcAddr(packet);
+//    srcPan = macGetSrcPan(packet);
+//
+//    frame = NULL;
+//    while(frame == NULL) {
+//        frame = camGetFrame();
+//    }
+//
+//    cvProcessFrame(frame, &info);
+//
+//    height = DS_IMAGE_ROWS;
+//    width = DS_IMAGE_COLS;
+//
+//    for(i = 0; i < height; i++) {
+//        row = &(frame->pixels[i]);
+//        to_send = width;
+//        while(to_send > 0) {
+//            response = radioRequestPacket(block_size + 6);
+//            if(response == NULL) { continue; }
+//            pld = macGetPayload(response);
+//            paySetType(pld, CMD_RAW_FRAME_RESPONSE);
+//            paySetStatus(pld, 0);
+//            macSetDestAddr(response, srcAddr);
+//            macSetDestPan(response, srcPan);
+//            temp = frame->frame_num;
+//            paySetData(pld, 2, (unsigned char *)&temp);
+//            temp = i;
+//            payAppendData(pld, 2, 2, (unsigned char*)&temp);
+//            temp = width - to_send;
+//            payAppendData(pld, 4, 2, (unsigned char*)&temp);
+//            temp = (block_size < to_send) ? block_size : to_send;
+//            payAppendData(pld, 6, temp, *row + (width - to_send));
+//
+//            while(!radioEnqueueTxPacket(response));
+//
+//            to_send = to_send - temp;
+//
+//        }
+//
+//    }
+//    sent = 0;
+//    while(!sent) {
+//        response = radioRequestPacket(10);
+//        if(response == NULL) { continue; }
+//        pld = macGetPayload(response);
+//        paySetType(pld, CMD_CENTROID_REPORT);
+//        paySetStatus(pld, 1);
+//        macSetDestAddr(response, srcAddr);
+//        macSetDestPan(response, srcPan);
+//        temp = info.centroid[0];
+//        paySetData(pld, 2, (unsigned char*)&temp);
+//        temp = info.centroid[1];
+//        payAppendData(pld, 2, 2, (unsigned char*)&temp);
+//        temp = info.max[0];
+//        payAppendData(pld, 4, 2, (unsigned char*)&temp);
+//        temp = info.max[1];
+//        payAppendData(pld, 6, 2, (unsigned char*)&temp);
+//        temp = info.max_lum;
+//        payAppendData(pld, 8, 1, (unsigned char*)&temp);
+//        temp = info.avg_lum;
+//        payAppendData(pld, 9, 1, (unsigned char*)&temp);
+//        while(!radioEnqueueTxPacket(response));
+//        sent = 1;
+//    }
+//    camReturnFrame(frame);
 
 }
 
@@ -793,67 +864,67 @@ static void cmdResponseRawFrame(MacPacket packet) {
 
 static void cmdSetBackgroundFrame(MacPacket packet) {
 
-    CamFrame frame;
-
-    frame = NULL;
-    while(frame == NULL) {
-        frame = camGetFrame();
-    }
-
-    camReturnFrame(cvSetBackgroundFrame(frame));
+//    CamFrame frame;
+//
+//    frame = NULL;
+//    while(frame == NULL) {
+//        frame = camGetFrame();
+//    }
+//
+//    camReturnFrame(cvSetBackgroundFrame(frame));
 
 }
 
 static void cmdCamParamRequest(MacPacket packet) {
 
-    Payload pld;
-    CamParamStruct params;
-    MacPacket response;
-    
-    pld = macGetPayload(packet);
-    camGetParams(&params);
-    
-    response = radioRequestPacket(sizeof(CamParamStruct));
-    if(response == NULL) { return; }
-    
-    macSetDestAddr(response, macGetSrcAddr(packet));
-    pld = macGetPayload(response);
-    paySetType(pld, CMD_CAM_PARAM_RESPONSE);
-    paySetStatus(pld, 0);
-    paySetData(pld, sizeof(CamParamStruct), (unsigned char*)&params);
-
-    while(!radioEnqueueTxPacket(response));
+//    Payload pld;
+//    CamParamStruct params;
+//    MacPacket response;
+//
+//    pld = macGetPayload(packet);
+//    camGetParams(&params);
+//
+//    response = radioRequestPacket(sizeof(CamParamStruct));
+//    if(response == NULL) { return; }
+//
+//    macSetDestAddr(response, macGetSrcAddr(packet));
+//    pld = macGetPayload(response);
+//    paySetType(pld, CMD_CAM_PARAM_RESPONSE);
+//    paySetStatus(pld, 0);
+//    paySetData(pld, sizeof(CamParamStruct), (unsigned char*)&params);
+//
+//    while(!radioEnqueueTxPacket(response));
 
 
 }
 
 static void cmdCamParamResponse(MacPacket packet) {
 
-    Payload pld;
-    unsigned char *frame;
-    CamParamStruct *params;
-    LStrobeParamStruct lstrobe_params;
-    DirEntry entry;
-    unsigned int addr, pan;
-    
-    pld = macGetPayload(packet);
-    frame = payGetData(pld);
-    params = (CamParamStruct*) frame;
-        
-    addr = macGetSrcAddr(packet);
-    pan = macGetSrcPan(packet);
-    entry = dirQueryAddress(addr, pan);
-    
-    if(entry == NULL) { return; }
-    entry->frame_period = params->frame_period;
-    entry->frame_start = params->frame_start;
-
-    lstrobe_params.period = 5*(params->frame_period/4);
-    lstrobe_params.period_offset = (params->frame_start/4) % (params->frame_period/4);
-    lstrobe_params.on_time = 625/4; // 1 ms
-    lstrobe_params.off_time = lstrobe_params.period - lstrobe_params.on_time;
-    lstrobeSetParam(&lstrobe_params);
-    lstrobeStart();
+//    Payload pld;
+//    unsigned char *frame;
+//    CamParamStruct *params;
+//    LStrobeParamStruct lstrobe_params;
+//    DirEntry entry;
+//    unsigned int addr, pan;
+//
+//    pld = macGetPayload(packet);
+//    frame = payGetData(pld);
+//    params = (CamParamStruct*) frame;
+//
+//    addr = macGetSrcAddr(packet);
+//    pan = macGetSrcPan(packet);
+//    entry = dirQueryAddress(addr, pan);
+//
+//    if(entry == NULL) { return; }
+//    entry->frame_period = params->frame_period;
+//    entry->frame_start = params->frame_start;
+//
+//    lstrobe_params.period = 5*(params->frame_period/4);
+//    lstrobe_params.period_offset = (params->frame_start/4) % (params->frame_period/4);
+//    lstrobe_params.on_time = 625/4; // 1 ms
+//    lstrobe_params.off_time = lstrobe_params.period - lstrobe_params.on_time;
+//    lstrobeSetParam(&lstrobe_params);
+//    lstrobeStart();
     
 }
 
@@ -902,6 +973,8 @@ void cmdSetSlewLimit(MacPacket packet) {
     slewSetLimit(*data);
     
 }
+
+
 
 /*-----------------------------------------------------------------------------
  *          AUX functions
