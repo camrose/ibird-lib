@@ -64,6 +64,7 @@
 #include "adc_pid.h"
 #include "led.h"
 #include "hall.h"
+#include "line_sensor.h"
 
 // Hardware/actuator interface
 #include "motor_ctrl.h"
@@ -106,7 +107,7 @@ CtrlPidParamStruct yawPid, pitchPid, thrustPid;
 DigitalFilterStruct yawRateFilter, pitchRateFilter, rollRateFilter;
 
 // State info
-static unsigned char is_ready = 0, is_logging = 0, temp_rot_active = 0, fig_eight =0;
+static unsigned char is_ready = 0, is_logging = 0, temp_rot_active = 0, fig_eight = 0, line_track = 0;
 static unsigned char yaw_filter_ready = 0, pitch_filter_ready = 0, roll_filter_ready = 0;
 static RegulatorMode reg_mode;
 static RegulatorOutput rc_outputs;
@@ -387,6 +388,7 @@ void rgltrRunController(void) {
     int updated_bemf;
     Quaternion ref_temp;
     RateStruct rate_set;
+    LineCam line;
 
     if(!is_ready) { return; }    
 
@@ -451,6 +453,11 @@ void rgltrRunController(void) {
                 eight_stage = 5;
             }
         } else if (eight_stage == 5) {
+            
+        }
+    } else if (line_track) {
+        if (lsHasNewFrame()) {
+            line = lsGetFrame();
             
         }
     }
