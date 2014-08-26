@@ -130,6 +130,10 @@
 #define CMD_LINE_FRAME_RESPONSE         (0x5C)      //Get line cam line
 #define CMD_LINE_FRAME_REQUEST          (0x5D)
 #define CMD_LINE_SET_EXPOSURE           (0x5E)
+#define CMD_LINE_EDGE_REQUEST           (0x4F)
+#define CMD_LINE_EDGE_RESPONSE          (0x5F)
+
+#define CMD_TRACK_MARKER                (0x4D)
 
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use

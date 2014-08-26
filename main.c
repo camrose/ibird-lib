@@ -93,7 +93,7 @@
 #define REGULATOR_FCY               (300)       // 300 Hz
 #define RADIO_FCY                   (200)       // 200 Hz
 //#define LS_FCY                      (15385)         // 2 Hz
-#define LS_FCY                      (6000)         // 2 Hz
+#define LS_FCY                      (6000)         // 3000 Hz (actual freq is half this value)
 #define RADIO_TX_QUEUE_SIZE         (40)        // 40 Outgoing
 #define RADIO_RX_QUEUE_SIZE         (40)        // 40 Incoming
 

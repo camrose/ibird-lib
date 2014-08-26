@@ -163,8 +163,11 @@ static void cmdStartStrobe(MacPacket packet);
 static void cmdLsStartCapture(MacPacket packet);
 
 static void cmdGetLineFrame(MacPacket packet);
+static void cmdGetLineEdges(MacPacket packet);
 
 static void cmdLsSetExposure(MacPacket packet);
+
+static void cmdTrackMarker(MacPacket packet);
 
 // =============== Public Functions ============================================
 unsigned int cmdSetup(unsigned int queue_size) {
@@ -248,8 +251,10 @@ unsigned int cmdSetup(unsigned int queue_size) {
 
     cmd_func[CMD_LS_START_CAPTURE] = &cmdLsStartCapture;
     cmd_func[CMD_LINE_FRAME_REQUEST] = &cmdGetLineFrame;
+    cmd_func[CMD_LINE_EDGE_REQUEST] = &cmdGetLineEdges;
 
     cmd_func[CMD_LINE_SET_EXPOSURE] = &cmdLsSetExposure;
+    cmd_func[CMD_TRACK_MARKER] = &cmdTrackMarker;
 
     return 1;
     
@@ -583,6 +588,17 @@ static void cmdToggleEight(MacPacket packet) {
     }
 }
 
+static void cmdTrackMarker(MacPacket packet) {
+    Payload pld = macGetPayload(packet);
+    unsigned char flag = *(payGetData(pld));
+
+    if(flag == 0) {
+        rgltrStopLine();
+    } else if(flag == 1) {
+        rgltrStartLine();
+    }
+}
+
 // ====== Telemetry and Sensors ===============================================
 static void cmdSetLogging(MacPacket packet) {
 
@@ -733,6 +749,35 @@ static void cmdLsSetExposure(MacPacket packet) {
     unsigned int* data = (unsigned int *)(payGetData(pld));
 
     lsSetExposure(data[0], data[1]);
+}
+
+static void cmdGetLineEdges(MacPacket packet) {
+    unsigned int srcAddr, srcPan;
+    MacPacket response;
+    Payload pld;
+    EdgesStruct edges;
+    edges.edges[0] = 0;
+    edges.edges[1] = 0;
+    edges.edges[2] = 0;
+    edges.edges[3] = 0;
+    edges.edges[4] = 0;
+    edges.edges[5] = 0;
+
+    lsGetEdges(&edges);
+
+    srcAddr = macGetSrcAddr(packet);
+    srcPan = macGetSrcPan(packet);
+
+    response = radioRequestPacket(sizeof(EdgesStruct));
+    if(response == NULL) { return; }
+    macSetDestAddr(response, srcAddr);
+    macSetDestPan(response, srcPan);
+    pld = macGetPayload(response);
+    
+    paySetData(pld, sizeof(EdgesStruct), (unsigned char*)&edges);
+    paySetStatus(pld, 0);
+    paySetType(pld, CMD_LINE_EDGE_RESPONSE);
+    while(!radioEnqueueTxPacket(response));
 }
 
 static void cmdGetLineFrame(MacPacket packet) {

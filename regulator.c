@@ -59,6 +59,7 @@
 #include "attitude.h"
 #include "cv.h"
 #include "xl.h"
+#include "gyro.h"
 #include "rate.h"
 #include "slew.h"
 #include "adc_pid.h"
@@ -103,7 +104,7 @@ typedef struct {
 
 // =========== Static Variables ================================================
 // Control loop objects
-CtrlPidParamStruct yawPid, pitchPid, thrustPid;
+CtrlPidParamStruct yawPid, pitchPid, thrustPid, linePid;
 DigitalFilterStruct yawRateFilter, pitchRateFilter, rollRateFilter;
 
 // State info
@@ -111,7 +112,8 @@ static unsigned char is_ready = 0, is_logging = 0, temp_rot_active = 0, fig_eigh
 static unsigned char yaw_filter_ready = 0, pitch_filter_ready = 0, roll_filter_ready = 0;
 static RegulatorMode reg_mode;
 static RegulatorOutput rc_outputs;
-static Quaternion reference, limited_reference, pose, temp_rot;
+static Quaternion reference, limited_reference, pose, temp_rot, forward;
+static EdgesStruct curr_edges;
 static int eight_stage = 0;
 
 // Telemetry buffering
@@ -124,6 +126,7 @@ static float runPitchControl(float pitch);
 static float runRollControl(float roll);
 static int updateBEMF();
 
+static void processLine();
 static void calculateError(RegulatorError *error);
 static void calculateError2(Quaternion *ref_temp, RegulatorError *error);
 static void filterError(RegulatorError *error);
@@ -315,6 +318,13 @@ void rgltrSetRollPid(PidParams params) {
 
 }
 
+void rgltrSetLinePid(PidParams params) {
+    ctrlSetPidParams(&linePid, params->ref, params->kp, params->ki, params->kd);
+    ctrlSetPidOffset(&linePid, params->offset);
+    ctrlSetRefWeigts(&linePid, params->beta, params->gamma);
+    ctrlSetSaturation(&linePid, YAW_SAT_MAX, YAW_SAT_MIN);
+}
+
 void rgltrSetYawRef(float ref) {
     ctrlSetRef(&yawPid, ref);
 }
@@ -381,14 +391,24 @@ void rgltrStopEight(void) {
     eight_stage = 0;
 }
 
+void rgltrStartLine(void) {
+    if (!_T7IE) {
+        lsStartCapture(1);
+    }
+    line_track = 1;
+    quatCopy(&forward, &reference);
+}
+
+void rgltrStopLine(void) {
+    line_track = 0;
+}
+
 void rgltrRunController(void) {
     
     RegulatorError error;        
     RegulatorOutput output;
-    int updated_bemf;
     Quaternion ref_temp;
     RateStruct rate_set;
-    LineCam line;
 
     if(!is_ready) { return; }    
 
@@ -455,10 +475,10 @@ void rgltrRunController(void) {
         } else if (eight_stage == 5) {
             
         }
-    } else if (line_track) {
+    }
+    if (line_track) {
         if (lsHasNewFrame()) {
-            line = lsGetFrame();
-            
+            processLine();
         }
     }
 
@@ -481,6 +501,37 @@ void rgltrRunController(void) {
 
 
 // =========== Private Functions ===============================================
+
+static void processLine(void) {
+    float marker_center, center_frame = 63.5, turn_angle;
+    Quaternion new_angle,temp_angle;
+    curr_edges.edges[0] = 0;
+    curr_edges.edges[1] = 0;
+    curr_edges.edges[2] = 0;
+    curr_edges.edges[3] = 0;
+    curr_edges.edges[4] = 0;
+    curr_edges.edges[5] = 0;
+    
+    if (lsGetMarker(&curr_edges)) {
+        marker_center = curr_edges.location;
+        turn_angle = (marker_center - center_frame)*(LINE_VIEW_ANGLE/LINE_FRAME_WIDTH);
+        if (curr_edges.distance <= 0.5) {
+            new_angle.w = 0.0;
+            new_angle.x = 0.0;
+            new_angle.y = 0.0;
+            new_angle.z = 1.0;
+            quatRotate(&forward,&new_angle,&temp_angle);
+            rgltrSetQuatRef(&temp_angle);
+        } else {
+            new_angle.w = cos(turn_angle/2.0);
+            new_angle.x = 0.0;
+            new_angle.y = 0.0;
+            new_angle.z = sin(turn_angle/2.0);
+            quatRotate(&forward,&new_angle,&temp_angle);
+            rgltrSetQuatRef(&temp_angle);
+        }
+    }
+}
 
 static float runYawControl(float yaw) {
 
@@ -737,9 +788,12 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         //storage->u[0] = hallGetOutput();
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
-        storage->bemf[0] = hallGetBEMF();
+        //storage->bemf[0] = hallGetBEMF();
         motor_counts = hallGetMotorCounts();
-        storage->bemf[1] = motor_counts[0];
+        storage->bemf = motor_counts[0];
+        memcpy(&storage->edges,curr_edges.edges,6*sizeof(unsigned char));
+        storage->distance = curr_edges.distance;
+        storage->location = curr_edges.location;
         //storage->bemf[1] = (int) (hallGetError()/1000);
         //storage->crank = crankAngle;
         //storage->crank = (float) hallGetError();

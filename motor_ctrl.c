@@ -164,7 +164,7 @@ static void mcSetupPeripheral(void) {
     PWMCON1bits.PMOD1 = 1;
     PWMCON1bits.PMOD2 = 1;
     PWMCON1bits.PMOD3 = 1;
-    PWMCON1bits.PMOD4 = 0;
+    PWMCON1bits.PMOD4 = 1;
 
     PWMCON1bits.PEN1H = 0;
     PWMCON1bits.PEN2H = 0;
