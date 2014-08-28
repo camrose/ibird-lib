@@ -234,6 +234,7 @@ unsigned char lsGetEdges(Edges edges) {
 unsigned char lsGetMarker(Edges edges) {
     float center;
     float ratio;
+    float ratio_error;
     int marker_width;
     int center_width;
 
@@ -246,9 +247,15 @@ unsigned char lsGetMarker(Edges edges) {
     marker_width = edges->edges[5] - edges->edges[0];
 
     ratio = (float)center_width/(float)marker_width;
-    if (abs(ratio-CENTER_TO_WIDTH) < 0.1) {
+    ratio_error = fabs(ratio-CENTER_TO_WIDTH);
+    if (fabs(ratio-CENTER_TO_WIDTH) < 0.1) {
         edges->location = center;
         edges->distance = PX_TO_M/marker_width;
+        if (edges->distance < 0.5) {
+            Nop();
+            Nop();
+            Nop();
+        }
         return 1;
     } else {
         edges->distance = 0;
