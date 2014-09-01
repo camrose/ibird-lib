@@ -35,6 +35,7 @@ void lsReturnFrame(LineCam frame);
 unsigned int lsGetFrameNum(void);
 unsigned char lsGetEdges(Edges edges);
 unsigned char lsGetMarker(Edges edges);
+unsigned char lsFoundMarker();
 
 #endif // __LINE_SENSOR_H
 

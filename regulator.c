@@ -99,6 +99,8 @@ typedef struct {
 #define PITCH_SAT_MIN       (-1.0)
 #define ROLL_SAT_MAX        (1.0)
 #define ROLL_SAT_MIN        (0.0) // Doubling as thrust right now
+#define LINE_SAT_MAX         (238.3)
+#define LINE_SAT_MIN         (-238.3)
 
 #define DEFAULT_SLEW_LIMIT  (1.0)
 
@@ -171,7 +173,8 @@ void rgltrSetup(float ts) {
 
     ctrlInitPidParams(&yawPid, ts);
     ctrlInitPidParams(&pitchPid, ts);
-    ctrlInitPidParams(&thrustPid, ts);    
+    ctrlInitPidParams(&thrustPid, ts);
+    ctrlInitPidParams(&linePid, ts);
 
     ppbuffInit(&reg_state_buff);
     ppbuffWriteActive(&reg_state_buff, &reg_states[0]);
@@ -319,10 +322,12 @@ void rgltrSetRollPid(PidParams params) {
 }
 
 void rgltrSetLinePid(PidParams params) {
+
     ctrlSetPidParams(&linePid, params->ref, params->kp, params->ki, params->kd);
     ctrlSetPidOffset(&linePid, params->offset);
     ctrlSetRefWeigts(&linePid, params->beta, params->gamma);
-    ctrlSetSaturation(&linePid, YAW_SAT_MAX, YAW_SAT_MIN);
+    ctrlSetSaturation(&linePid, LINE_SAT_MAX, LINE_SAT_MIN);
+    
 }
 
 void rgltrSetYawRef(float ref) {
@@ -503,7 +508,7 @@ void rgltrRunController(void) {
 // =========== Private Functions ===============================================
 
 static void processLine(void) {
-    float marker_center, center_frame = 63.5, turn_angle;
+    float marker_center, center_frame = 63.5, turn_angle, line_error;
     Quaternion new_angle,temp_angle;
     curr_edges.edges[0] = 0;
     curr_edges.edges[1] = 0;
@@ -514,8 +519,9 @@ static void processLine(void) {
     
     if (lsGetMarker(&curr_edges)) {
         marker_center = curr_edges.location;
-        turn_angle = (marker_center - center_frame)*(LINE_VIEW_ANGLE/LINE_FRAME_WIDTH);
-        if (curr_edges.distance <= 0.5) {
+        line_error = ctrlRunPid(&linePid, marker_center, NULL);
+        turn_angle = line_error*(LINE_VIEW_ANGLE/LINE_FRAME_WIDTH);
+        if (curr_edges.distance <= 0.75) {
             new_angle.w = 0.0;
             new_angle.x = 0.0;
             new_angle.y = 0.0;

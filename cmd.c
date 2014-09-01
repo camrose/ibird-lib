@@ -169,6 +169,8 @@ static void cmdLsSetExposure(MacPacket packet);
 
 static void cmdTrackMarker(MacPacket packet);
 
+static void cmdFoundMarker(MacPacket packet);
+
 // =============== Public Functions ============================================
 unsigned int cmdSetup(unsigned int queue_size) {
 
@@ -255,6 +257,8 @@ unsigned int cmdSetup(unsigned int queue_size) {
 
     cmd_func[CMD_LINE_SET_EXPOSURE] = &cmdLsSetExposure;
     cmd_func[CMD_TRACK_MARKER] = &cmdTrackMarker;
+
+    cmd_func[CMD_FOUND_MARKER_REQUEST] = &cmdFoundMarker;
 
     return 1;
     
@@ -523,6 +527,7 @@ static void cmdSetRegulatorPid(MacPacket packet) {
     rgltrSetYawPid(&params[0]);
     rgltrSetPitchPid(&params[1]);
     rgltrSetRollPid(&params[2]);
+    rgltrSetLinePid(&params[3]);
 
 }
 
@@ -777,6 +782,29 @@ static void cmdGetLineEdges(MacPacket packet) {
     paySetData(pld, sizeof(EdgesStruct), (unsigned char*)&edges);
     paySetStatus(pld, 0);
     paySetType(pld, CMD_LINE_EDGE_RESPONSE);
+    while(!radioEnqueueTxPacket(response));
+}
+
+static void cmdFoundMarker(MacPacket packet) {
+    unsigned int srcAddr, srcPan;
+    MacPacket response;
+    Payload pld;
+    unsigned char found;
+
+    found = lsFoundMarker();
+
+    srcAddr = macGetSrcAddr(packet);
+    srcPan = macGetSrcPan(packet);
+
+    response = radioRequestPacket(sizeof(unsigned char));
+    if(response == NULL) { return; }
+    macSetDestAddr(response, srcAddr);
+    macSetDestPan(response, srcPan);
+    pld = macGetPayload(response);
+
+    paySetData(pld, sizeof(unsigned char), (unsigned char*)&found);
+    paySetStatus(pld, 0);
+    paySetType(pld, CMD_FOUND_MARKER_RESPONSE);
     while(!radioEnqueueTxPacket(response));
 }
 

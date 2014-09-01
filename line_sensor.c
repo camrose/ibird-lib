@@ -56,8 +56,6 @@
 
 // ==== CONSTANTS ===========================================
 
-// Test repo
-
 #define FCY                     (40000000)
 #define LS_CLOCK                (_LATE6)
 #define LS_SI                   (_LATE7)
@@ -66,6 +64,7 @@
 #define MAX_LINE                (4000)
 #define PX_TO_M                 (35.8209)
 #define CENTER_TO_WIDTH         (0.2227)
+#define EDGE_THRESH             (1000)
 
 
 // ==== STATIC VARIABLES ====================================
@@ -77,6 +76,7 @@ static unsigned int max_cnt;
 LineCam current_frame;
 static unsigned char has_new_frame;
 static unsigned char new_line_sent;
+static unsigned char found_marker;
 
 unsigned int max_sig;
 
@@ -131,6 +131,7 @@ void lsSetup(LineCam frames, unsigned int num_frames, unsigned int fs) {
     is_ready = 1;
     has_new_frame = 0;
     new_line_sent = 0;
+    found_marker = 0;
 }
 
 void lsStartCapture(unsigned char flag) {
@@ -216,10 +217,10 @@ unsigned char lsGetEdges(Edges edges) {
         }
     }
     for(i=0;i<3;i++){
-        if(abs(peaks_az[i])>2000) {
+        if(abs(peaks_az[i])>EDGE_THRESH) {
             edges->edges[i] = peaks_az_loc[i];
         }
-        if(abs(peaks_bz[i])>2000) {
+        if(abs(peaks_bz[i])>EDGE_THRESH) {
             edges->edges[i+3] = peaks_bz_loc[i];
         }
     }
@@ -241,6 +242,7 @@ unsigned char lsGetMarker(Edges edges) {
     int center_width;
 
     if (lsGetEdges(edges) == 0) {
+        found_marker = 0;
         return 0;
     }
 
@@ -253,19 +255,20 @@ unsigned char lsGetMarker(Edges edges) {
     if (fabs(ratio-CENTER_TO_WIDTH) < 0.1) {
         edges->location = center;
         edges->distance = PX_TO_M/marker_width;
-        if (edges->distance < 0.5) {
-            Nop();
-            Nop();
-            Nop();
-        }
+        found_marker = 1;
         return 1;
     } else {
         edges->distance = 0;
         edges->location = 0;
+        found_marker = 0;
         return 0;
     }
 
 
+}
+
+unsigned char lsFoundMarker() {
+    return found_marker;
 }
 
 // =========== Private Functions ===============================================

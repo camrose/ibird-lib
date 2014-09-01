@@ -134,6 +134,8 @@
 #define CMD_LINE_EDGE_RESPONSE          (0x5F)
 
 #define CMD_TRACK_MARKER                (0x4D)
+#define CMD_FOUND_MARKER_REQUEST        (0x4B)
+#define CMD_FOUND_MARKER_RESPONSE       (0x4E)
 
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use
