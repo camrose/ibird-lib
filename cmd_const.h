@@ -137,6 +137,8 @@
 #define CMD_FOUND_MARKER_REQUEST        (0x4B)
 #define CMD_FOUND_MARKER_RESPONSE       (0x4E)
 
+#define CMD_SET_LINE_PID                (0x3A)
+
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use
 

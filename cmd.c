@@ -171,6 +171,8 @@ static void cmdTrackMarker(MacPacket packet);
 
 static void cmdFoundMarker(MacPacket packet);
 
+static void cmdSetLinePid(MacPacket packet);
+
 // =============== Public Functions ============================================
 unsigned int cmdSetup(unsigned int queue_size) {
 
@@ -259,6 +261,8 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_TRACK_MARKER] = &cmdTrackMarker;
 
     cmd_func[CMD_FOUND_MARKER_REQUEST] = &cmdFoundMarker;
+
+    cmd_func[CMD_SET_LINE_PID] = &cmdSetLinePid;
 
     return 1;
     
@@ -527,7 +531,20 @@ static void cmdSetRegulatorPid(MacPacket packet) {
     rgltrSetYawPid(&params[0]);
     rgltrSetPitchPid(&params[1]);
     rgltrSetRollPid(&params[2]);
-    rgltrSetLinePid(&params[3]);
+
+}
+
+static void cmdSetLinePid(MacPacket packet) {
+
+    Payload pld;
+    unsigned char *frame;
+    PidParamsStruct *params;
+
+    pld = macGetPayload(packet);
+    frame = payGetData(pld);
+    params = (PidParamsStruct*) frame;
+
+    rgltrSetLinePid(&params[0]);
 
 }
 

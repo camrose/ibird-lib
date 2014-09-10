@@ -257,6 +257,7 @@ void rgltrSetHall(void) {
     reg_mode = REG_TRACK_HALL;
     ctrlStart(&yawPid);
     ctrlStart(&pitchPid);
+    ctrlStart(&linePid);
     hallPIDOn();
     servoStart();
 }
