@@ -730,9 +730,11 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         //storage->u[0] = hallGetOutput();
         storage->u[1] = output->steer;
         storage->u[2] = output->elevator;
-        storage->bemf[0] = hallGetBEMF();
+//        storage->bemf[0] = hallGetBEMF();
+        storage->bemf[0] = adcGetBEMFL();
         motor_counts = hallGetMotorCounts();
-        storage->bemf[1] = motor_counts[0];
+        //storage->bemf[1] = motor_counts[0];
+        storage->bemf[1] = adcGetVBatt();
         //storage->bemf[1] = (int) (hallGetError()/1000);
         //storage->crank = crankAngle;
         //storage->crank = (float) hallGetError();
