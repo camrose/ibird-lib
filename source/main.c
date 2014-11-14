@@ -181,7 +181,7 @@ void setupAll(void) {
     // Note: OV7660 I2C operates at 100 kHz on the same bus
     // as the accelerometer. Make sure to set up camera module first!
     dfmemSetup();                           // Flash memory device
-    //camSetup(cam_frames, NUM_CAM_FRAMES);   // Camera device
+    camSetup(cam_frames, NUM_CAM_FRAMES);   // Camera device
     
     // Accelerometer setup
     //xlSetup();
@@ -228,7 +228,7 @@ void setupAll(void) {
     LED_ORANGE = 0;
 
     DisableIntT6;
-    //camStart();     // Start camera capture
+    camStart();     // Start camera capture
     attStart();     // Start attitude estimation 
     EnableIntT5;    // Start control loop
     EnableIntT6;

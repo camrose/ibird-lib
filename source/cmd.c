@@ -723,7 +723,7 @@ static void cmdRequestRawFrame(MacPacket packet) {
         frame = camGetFrame();
     }           
 
-    cvProcessFrame(frame, &info);    
+    //cvProcessFrame(frame, &info);
 
     height = DS_IMAGE_ROWS;
     width = DS_IMAGE_COLS;
@@ -756,29 +756,29 @@ static void cmdRequestRawFrame(MacPacket packet) {
 
     }
     sent = 0;
-    while(!sent) {
-        response = radioRequestPacket(10);
-        if(response == NULL) { continue; }
-        pld = macGetPayload(response);
-        paySetType(pld, CMD_CENTROID_REPORT);
-        paySetStatus(pld, 1);
-        macSetDestAddr(response, srcAddr);
-        macSetDestPan(response, srcPan);
-        temp = info.centroid[0];
-        paySetData(pld, 2, (unsigned char*)&temp);
-        temp = info.centroid[1];
-        payAppendData(pld, 2, 2, (unsigned char*)&temp);
-        temp = info.max[0];
-        payAppendData(pld, 4, 2, (unsigned char*)&temp);
-        temp = info.max[1];
-        payAppendData(pld, 6, 2, (unsigned char*)&temp);
-        temp = info.max_lum;
-        payAppendData(pld, 8, 1, (unsigned char*)&temp);
-        temp = info.avg_lum;
-        payAppendData(pld, 9, 1, (unsigned char*)&temp);
-        while(!radioEnqueueTxPacket(response));
-        sent = 1;
-    }
+//    while(!sent) {
+//        response = radioRequestPacket(10);
+//        if(response == NULL) { continue; }
+//        pld = macGetPayload(response);
+//        paySetType(pld, CMD_CENTROID_REPORT);
+//        paySetStatus(pld, 1);
+//        macSetDestAddr(response, srcAddr);
+//        macSetDestPan(response, srcPan);
+//        temp = info.centroid[0];
+//        paySetData(pld, 2, (unsigned char*)&temp);
+//        temp = info.centroid[1];
+//        payAppendData(pld, 2, 2, (unsigned char*)&temp);
+//        temp = info.max[0];
+//        payAppendData(pld, 4, 2, (unsigned char*)&temp);
+//        temp = info.max[1];
+//        payAppendData(pld, 6, 2, (unsigned char*)&temp);
+//        temp = info.max_lum;
+//        payAppendData(pld, 8, 1, (unsigned char*)&temp);
+//        temp = info.avg_lum;
+//        payAppendData(pld, 9, 1, (unsigned char*)&temp);
+//        while(!radioEnqueueTxPacket(response));
+//        sent = 1;
+//    }
     camReturnFrame(frame);
 
 }
