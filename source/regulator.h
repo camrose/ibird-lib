@@ -56,8 +56,11 @@ typedef struct {
     unsigned char gyro_data[3*sizeof(int)]; // (6)
     unsigned char xl_data[3*sizeof(int)]; // (6)
     float u[3];         // Outputs (12)
-    int bemf[2]; // BEMF (4)
-    float crank; //crank angle (4)
+    unsigned int bemf; // BEMF (2)
+    unsigned char edges[6]; // (6)
+    float distance;
+    float location;
+    //float crank; //crank angle (4)
     unsigned long time; // Timestamp (4)
     //float xl_data[3];   // Accel Data (12)
 } RegulatorStateStruct; // Total: 68 bytes
@@ -151,6 +154,9 @@ void rgltrSetRemoteControlValues(float thrust, float steer, float elevator);
 
 void rgltrStartEight(void);
 void rgltrStopEight(void);
+
+void rgltrStartLine(void);
+void rgltrStopLine(void);
 
 /**
  * Execute control loop iteration. This method should be called regularly every
