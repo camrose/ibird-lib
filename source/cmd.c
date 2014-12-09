@@ -64,7 +64,6 @@
 #include "attitude.h"
 #include "regulator.h"
 #include "mac_packet.h"
-#include "cv.h"
 #include "directory.h"
 #include "carray.h"
 #include "slew.h"
@@ -1041,7 +1040,7 @@ static void cmdResponseAttitude(MacPacket packet) {
 
 void cmdSetHP(MacPacket packet) {
 
-    cvSetHP();
+    //cvSetHP();
 
 }
 

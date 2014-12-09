@@ -45,17 +45,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=source/adc_pid.c source/clock_sync.c source/cv.c source/directory.c source/hall.c source/lstrobe.c source/motor_ctrl.c source/net.c source/pbuff.c source/ppbuff.c source/rate.c source/regulator.c source/slew.c source/sqrti.c source/sync_servo.c source/sys_clock.c source/telemetry.c ../imageproc-lib/at86rf231_driver.c ../imageproc-lib/attitude.c ../imageproc-lib/bams.c ../imageproc-lib/battery.c ../imageproc-lib/cam.c ../imageproc-lib/carray.c ../imageproc-lib/controller.c ../imageproc-lib/counter.c ../imageproc-lib/dfilter.c ../imageproc-lib/dfilter_avg.c ../imageproc-lib/dfmem.c ../imageproc-lib/gyro.c ../imageproc-lib/i2c_driver.c ../imageproc-lib/init_default.c ../imageproc-lib/ipspi1.c ../imageproc-lib/larray.c ../imageproc-lib/lcd.c ../imageproc-lib/mac_packet.c ../imageproc-lib/mpu6050.c ../imageproc-lib/ovcam.c ../imageproc-lib/packet_queue.c ../imageproc-lib/payload.c ../imageproc-lib/payload_queue.c ../imageproc-lib/pid.c ../imageproc-lib/pid_hw.c ../imageproc-lib/ppool.c ../imageproc-lib/quat.c ../imageproc-lib/queue.c ../imageproc-lib/radio.c ../imageproc-lib/spi_controller.c ../imageproc-lib/stopwatch.c ../imageproc-lib/wii.c ../imageproc-lib/xl.c ../imageproc-lib/delay.s ../imageproc-lib/ovcamHS.s source/main.c source/cmd.c
+SOURCEFILES_QUOTED_IF_SPACED=source/adc_pid.c source/clock_sync.c source/directory.c source/hall.c source/lstrobe.c source/motor_ctrl.c source/net.c source/pbuff.c source/ppbuff.c source/rate.c source/regulator.c source/slew.c source/sqrti.c source/sync_servo.c source/sys_clock.c source/telemetry.c ../imageproc-lib/at86rf231_driver.c ../imageproc-lib/attitude.c ../imageproc-lib/bams.c ../imageproc-lib/battery.c ../imageproc-lib/carray.c ../imageproc-lib/controller.c ../imageproc-lib/counter.c ../imageproc-lib/dfilter.c ../imageproc-lib/dfilter_avg.c ../imageproc-lib/dfmem.c ../imageproc-lib/gyro.c ../imageproc-lib/i2c_driver.c ../imageproc-lib/init_default.c ../imageproc-lib/ipspi1.c ../imageproc-lib/larray.c ../imageproc-lib/lcd.c ../imageproc-lib/mac_packet.c ../imageproc-lib/mpu6050.c ../imageproc-lib/packet_queue.c ../imageproc-lib/payload.c ../imageproc-lib/payload_queue.c ../imageproc-lib/pid.c ../imageproc-lib/pid_hw.c ../imageproc-lib/ppool.c ../imageproc-lib/quat.c ../imageproc-lib/queue.c ../imageproc-lib/radio.c ../imageproc-lib/spi_controller.c ../imageproc-lib/stopwatch.c ../imageproc-lib/wii.c ../imageproc-lib/xl.c ../imageproc-lib/delay.s source/main.c source/cmd.c source/line_sensor.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/source/adc_pid.o ${OBJECTDIR}/source/clock_sync.o ${OBJECTDIR}/source/cv.o ${OBJECTDIR}/source/directory.o ${OBJECTDIR}/source/hall.o ${OBJECTDIR}/source/lstrobe.o ${OBJECTDIR}/source/motor_ctrl.o ${OBJECTDIR}/source/net.o ${OBJECTDIR}/source/pbuff.o ${OBJECTDIR}/source/ppbuff.o ${OBJECTDIR}/source/rate.o ${OBJECTDIR}/source/regulator.o ${OBJECTDIR}/source/slew.o ${OBJECTDIR}/source/sqrti.o ${OBJECTDIR}/source/sync_servo.o ${OBJECTDIR}/source/sys_clock.o ${OBJECTDIR}/source/telemetry.o ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o ${OBJECTDIR}/_ext/921515994/attitude.o ${OBJECTDIR}/_ext/921515994/bams.o ${OBJECTDIR}/_ext/921515994/battery.o ${OBJECTDIR}/_ext/921515994/cam.o ${OBJECTDIR}/_ext/921515994/carray.o ${OBJECTDIR}/_ext/921515994/controller.o ${OBJECTDIR}/_ext/921515994/counter.o ${OBJECTDIR}/_ext/921515994/dfilter.o ${OBJECTDIR}/_ext/921515994/dfilter_avg.o ${OBJECTDIR}/_ext/921515994/dfmem.o ${OBJECTDIR}/_ext/921515994/gyro.o ${OBJECTDIR}/_ext/921515994/i2c_driver.o ${OBJECTDIR}/_ext/921515994/init_default.o ${OBJECTDIR}/_ext/921515994/ipspi1.o ${OBJECTDIR}/_ext/921515994/larray.o ${OBJECTDIR}/_ext/921515994/lcd.o ${OBJECTDIR}/_ext/921515994/mac_packet.o ${OBJECTDIR}/_ext/921515994/mpu6050.o ${OBJECTDIR}/_ext/921515994/ovcam.o ${OBJECTDIR}/_ext/921515994/packet_queue.o ${OBJECTDIR}/_ext/921515994/payload.o ${OBJECTDIR}/_ext/921515994/payload_queue.o ${OBJECTDIR}/_ext/921515994/pid.o ${OBJECTDIR}/_ext/921515994/pid_hw.o ${OBJECTDIR}/_ext/921515994/ppool.o ${OBJECTDIR}/_ext/921515994/quat.o ${OBJECTDIR}/_ext/921515994/queue.o ${OBJECTDIR}/_ext/921515994/radio.o ${OBJECTDIR}/_ext/921515994/spi_controller.o ${OBJECTDIR}/_ext/921515994/stopwatch.o ${OBJECTDIR}/_ext/921515994/wii.o ${OBJECTDIR}/_ext/921515994/xl.o ${OBJECTDIR}/_ext/921515994/delay.o ${OBJECTDIR}/_ext/921515994/ovcamHS.o ${OBJECTDIR}/source/main.o ${OBJECTDIR}/source/cmd.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/source/adc_pid.o.d ${OBJECTDIR}/source/clock_sync.o.d ${OBJECTDIR}/source/cv.o.d ${OBJECTDIR}/source/directory.o.d ${OBJECTDIR}/source/hall.o.d ${OBJECTDIR}/source/lstrobe.o.d ${OBJECTDIR}/source/motor_ctrl.o.d ${OBJECTDIR}/source/net.o.d ${OBJECTDIR}/source/pbuff.o.d ${OBJECTDIR}/source/ppbuff.o.d ${OBJECTDIR}/source/rate.o.d ${OBJECTDIR}/source/regulator.o.d ${OBJECTDIR}/source/slew.o.d ${OBJECTDIR}/source/sqrti.o.d ${OBJECTDIR}/source/sync_servo.o.d ${OBJECTDIR}/source/sys_clock.o.d ${OBJECTDIR}/source/telemetry.o.d ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o.d ${OBJECTDIR}/_ext/921515994/attitude.o.d ${OBJECTDIR}/_ext/921515994/bams.o.d ${OBJECTDIR}/_ext/921515994/battery.o.d ${OBJECTDIR}/_ext/921515994/cam.o.d ${OBJECTDIR}/_ext/921515994/carray.o.d ${OBJECTDIR}/_ext/921515994/controller.o.d ${OBJECTDIR}/_ext/921515994/counter.o.d ${OBJECTDIR}/_ext/921515994/dfilter.o.d ${OBJECTDIR}/_ext/921515994/dfilter_avg.o.d ${OBJECTDIR}/_ext/921515994/dfmem.o.d ${OBJECTDIR}/_ext/921515994/gyro.o.d ${OBJECTDIR}/_ext/921515994/i2c_driver.o.d ${OBJECTDIR}/_ext/921515994/init_default.o.d ${OBJECTDIR}/_ext/921515994/ipspi1.o.d ${OBJECTDIR}/_ext/921515994/larray.o.d ${OBJECTDIR}/_ext/921515994/lcd.o.d ${OBJECTDIR}/_ext/921515994/mac_packet.o.d ${OBJECTDIR}/_ext/921515994/mpu6050.o.d ${OBJECTDIR}/_ext/921515994/ovcam.o.d ${OBJECTDIR}/_ext/921515994/packet_queue.o.d ${OBJECTDIR}/_ext/921515994/payload.o.d ${OBJECTDIR}/_ext/921515994/payload_queue.o.d ${OBJECTDIR}/_ext/921515994/pid.o.d ${OBJECTDIR}/_ext/921515994/pid_hw.o.d ${OBJECTDIR}/_ext/921515994/ppool.o.d ${OBJECTDIR}/_ext/921515994/quat.o.d ${OBJECTDIR}/_ext/921515994/queue.o.d ${OBJECTDIR}/_ext/921515994/radio.o.d ${OBJECTDIR}/_ext/921515994/spi_controller.o.d ${OBJECTDIR}/_ext/921515994/stopwatch.o.d ${OBJECTDIR}/_ext/921515994/wii.o.d ${OBJECTDIR}/_ext/921515994/xl.o.d ${OBJECTDIR}/_ext/921515994/delay.o.d ${OBJECTDIR}/_ext/921515994/ovcamHS.o.d ${OBJECTDIR}/source/main.o.d ${OBJECTDIR}/source/cmd.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/source/adc_pid.o ${OBJECTDIR}/source/clock_sync.o ${OBJECTDIR}/source/directory.o ${OBJECTDIR}/source/hall.o ${OBJECTDIR}/source/lstrobe.o ${OBJECTDIR}/source/motor_ctrl.o ${OBJECTDIR}/source/net.o ${OBJECTDIR}/source/pbuff.o ${OBJECTDIR}/source/ppbuff.o ${OBJECTDIR}/source/rate.o ${OBJECTDIR}/source/regulator.o ${OBJECTDIR}/source/slew.o ${OBJECTDIR}/source/sqrti.o ${OBJECTDIR}/source/sync_servo.o ${OBJECTDIR}/source/sys_clock.o ${OBJECTDIR}/source/telemetry.o ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o ${OBJECTDIR}/_ext/921515994/attitude.o ${OBJECTDIR}/_ext/921515994/bams.o ${OBJECTDIR}/_ext/921515994/battery.o ${OBJECTDIR}/_ext/921515994/carray.o ${OBJECTDIR}/_ext/921515994/controller.o ${OBJECTDIR}/_ext/921515994/counter.o ${OBJECTDIR}/_ext/921515994/dfilter.o ${OBJECTDIR}/_ext/921515994/dfilter_avg.o ${OBJECTDIR}/_ext/921515994/dfmem.o ${OBJECTDIR}/_ext/921515994/gyro.o ${OBJECTDIR}/_ext/921515994/i2c_driver.o ${OBJECTDIR}/_ext/921515994/init_default.o ${OBJECTDIR}/_ext/921515994/ipspi1.o ${OBJECTDIR}/_ext/921515994/larray.o ${OBJECTDIR}/_ext/921515994/lcd.o ${OBJECTDIR}/_ext/921515994/mac_packet.o ${OBJECTDIR}/_ext/921515994/mpu6050.o ${OBJECTDIR}/_ext/921515994/packet_queue.o ${OBJECTDIR}/_ext/921515994/payload.o ${OBJECTDIR}/_ext/921515994/payload_queue.o ${OBJECTDIR}/_ext/921515994/pid.o ${OBJECTDIR}/_ext/921515994/pid_hw.o ${OBJECTDIR}/_ext/921515994/ppool.o ${OBJECTDIR}/_ext/921515994/quat.o ${OBJECTDIR}/_ext/921515994/queue.o ${OBJECTDIR}/_ext/921515994/radio.o ${OBJECTDIR}/_ext/921515994/spi_controller.o ${OBJECTDIR}/_ext/921515994/stopwatch.o ${OBJECTDIR}/_ext/921515994/wii.o ${OBJECTDIR}/_ext/921515994/xl.o ${OBJECTDIR}/_ext/921515994/delay.o ${OBJECTDIR}/source/main.o ${OBJECTDIR}/source/cmd.o ${OBJECTDIR}/source/line_sensor.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/source/adc_pid.o.d ${OBJECTDIR}/source/clock_sync.o.d ${OBJECTDIR}/source/directory.o.d ${OBJECTDIR}/source/hall.o.d ${OBJECTDIR}/source/lstrobe.o.d ${OBJECTDIR}/source/motor_ctrl.o.d ${OBJECTDIR}/source/net.o.d ${OBJECTDIR}/source/pbuff.o.d ${OBJECTDIR}/source/ppbuff.o.d ${OBJECTDIR}/source/rate.o.d ${OBJECTDIR}/source/regulator.o.d ${OBJECTDIR}/source/slew.o.d ${OBJECTDIR}/source/sqrti.o.d ${OBJECTDIR}/source/sync_servo.o.d ${OBJECTDIR}/source/sys_clock.o.d ${OBJECTDIR}/source/telemetry.o.d ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o.d ${OBJECTDIR}/_ext/921515994/attitude.o.d ${OBJECTDIR}/_ext/921515994/bams.o.d ${OBJECTDIR}/_ext/921515994/battery.o.d ${OBJECTDIR}/_ext/921515994/carray.o.d ${OBJECTDIR}/_ext/921515994/controller.o.d ${OBJECTDIR}/_ext/921515994/counter.o.d ${OBJECTDIR}/_ext/921515994/dfilter.o.d ${OBJECTDIR}/_ext/921515994/dfilter_avg.o.d ${OBJECTDIR}/_ext/921515994/dfmem.o.d ${OBJECTDIR}/_ext/921515994/gyro.o.d ${OBJECTDIR}/_ext/921515994/i2c_driver.o.d ${OBJECTDIR}/_ext/921515994/init_default.o.d ${OBJECTDIR}/_ext/921515994/ipspi1.o.d ${OBJECTDIR}/_ext/921515994/larray.o.d ${OBJECTDIR}/_ext/921515994/lcd.o.d ${OBJECTDIR}/_ext/921515994/mac_packet.o.d ${OBJECTDIR}/_ext/921515994/mpu6050.o.d ${OBJECTDIR}/_ext/921515994/packet_queue.o.d ${OBJECTDIR}/_ext/921515994/payload.o.d ${OBJECTDIR}/_ext/921515994/payload_queue.o.d ${OBJECTDIR}/_ext/921515994/pid.o.d ${OBJECTDIR}/_ext/921515994/pid_hw.o.d ${OBJECTDIR}/_ext/921515994/ppool.o.d ${OBJECTDIR}/_ext/921515994/quat.o.d ${OBJECTDIR}/_ext/921515994/queue.o.d ${OBJECTDIR}/_ext/921515994/radio.o.d ${OBJECTDIR}/_ext/921515994/spi_controller.o.d ${OBJECTDIR}/_ext/921515994/stopwatch.o.d ${OBJECTDIR}/_ext/921515994/wii.o.d ${OBJECTDIR}/_ext/921515994/xl.o.d ${OBJECTDIR}/_ext/921515994/delay.o.d ${OBJECTDIR}/source/main.o.d ${OBJECTDIR}/source/cmd.o.d ${OBJECTDIR}/source/line_sensor.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/source/adc_pid.o ${OBJECTDIR}/source/clock_sync.o ${OBJECTDIR}/source/cv.o ${OBJECTDIR}/source/directory.o ${OBJECTDIR}/source/hall.o ${OBJECTDIR}/source/lstrobe.o ${OBJECTDIR}/source/motor_ctrl.o ${OBJECTDIR}/source/net.o ${OBJECTDIR}/source/pbuff.o ${OBJECTDIR}/source/ppbuff.o ${OBJECTDIR}/source/rate.o ${OBJECTDIR}/source/regulator.o ${OBJECTDIR}/source/slew.o ${OBJECTDIR}/source/sqrti.o ${OBJECTDIR}/source/sync_servo.o ${OBJECTDIR}/source/sys_clock.o ${OBJECTDIR}/source/telemetry.o ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o ${OBJECTDIR}/_ext/921515994/attitude.o ${OBJECTDIR}/_ext/921515994/bams.o ${OBJECTDIR}/_ext/921515994/battery.o ${OBJECTDIR}/_ext/921515994/cam.o ${OBJECTDIR}/_ext/921515994/carray.o ${OBJECTDIR}/_ext/921515994/controller.o ${OBJECTDIR}/_ext/921515994/counter.o ${OBJECTDIR}/_ext/921515994/dfilter.o ${OBJECTDIR}/_ext/921515994/dfilter_avg.o ${OBJECTDIR}/_ext/921515994/dfmem.o ${OBJECTDIR}/_ext/921515994/gyro.o ${OBJECTDIR}/_ext/921515994/i2c_driver.o ${OBJECTDIR}/_ext/921515994/init_default.o ${OBJECTDIR}/_ext/921515994/ipspi1.o ${OBJECTDIR}/_ext/921515994/larray.o ${OBJECTDIR}/_ext/921515994/lcd.o ${OBJECTDIR}/_ext/921515994/mac_packet.o ${OBJECTDIR}/_ext/921515994/mpu6050.o ${OBJECTDIR}/_ext/921515994/ovcam.o ${OBJECTDIR}/_ext/921515994/packet_queue.o ${OBJECTDIR}/_ext/921515994/payload.o ${OBJECTDIR}/_ext/921515994/payload_queue.o ${OBJECTDIR}/_ext/921515994/pid.o ${OBJECTDIR}/_ext/921515994/pid_hw.o ${OBJECTDIR}/_ext/921515994/ppool.o ${OBJECTDIR}/_ext/921515994/quat.o ${OBJECTDIR}/_ext/921515994/queue.o ${OBJECTDIR}/_ext/921515994/radio.o ${OBJECTDIR}/_ext/921515994/spi_controller.o ${OBJECTDIR}/_ext/921515994/stopwatch.o ${OBJECTDIR}/_ext/921515994/wii.o ${OBJECTDIR}/_ext/921515994/xl.o ${OBJECTDIR}/_ext/921515994/delay.o ${OBJECTDIR}/_ext/921515994/ovcamHS.o ${OBJECTDIR}/source/main.o ${OBJECTDIR}/source/cmd.o
+OBJECTFILES=${OBJECTDIR}/source/adc_pid.o ${OBJECTDIR}/source/clock_sync.o ${OBJECTDIR}/source/directory.o ${OBJECTDIR}/source/hall.o ${OBJECTDIR}/source/lstrobe.o ${OBJECTDIR}/source/motor_ctrl.o ${OBJECTDIR}/source/net.o ${OBJECTDIR}/source/pbuff.o ${OBJECTDIR}/source/ppbuff.o ${OBJECTDIR}/source/rate.o ${OBJECTDIR}/source/regulator.o ${OBJECTDIR}/source/slew.o ${OBJECTDIR}/source/sqrti.o ${OBJECTDIR}/source/sync_servo.o ${OBJECTDIR}/source/sys_clock.o ${OBJECTDIR}/source/telemetry.o ${OBJECTDIR}/_ext/921515994/at86rf231_driver.o ${OBJECTDIR}/_ext/921515994/attitude.o ${OBJECTDIR}/_ext/921515994/bams.o ${OBJECTDIR}/_ext/921515994/battery.o ${OBJECTDIR}/_ext/921515994/carray.o ${OBJECTDIR}/_ext/921515994/controller.o ${OBJECTDIR}/_ext/921515994/counter.o ${OBJECTDIR}/_ext/921515994/dfilter.o ${OBJECTDIR}/_ext/921515994/dfilter_avg.o ${OBJECTDIR}/_ext/921515994/dfmem.o ${OBJECTDIR}/_ext/921515994/gyro.o ${OBJECTDIR}/_ext/921515994/i2c_driver.o ${OBJECTDIR}/_ext/921515994/init_default.o ${OBJECTDIR}/_ext/921515994/ipspi1.o ${OBJECTDIR}/_ext/921515994/larray.o ${OBJECTDIR}/_ext/921515994/lcd.o ${OBJECTDIR}/_ext/921515994/mac_packet.o ${OBJECTDIR}/_ext/921515994/mpu6050.o ${OBJECTDIR}/_ext/921515994/packet_queue.o ${OBJECTDIR}/_ext/921515994/payload.o ${OBJECTDIR}/_ext/921515994/payload_queue.o ${OBJECTDIR}/_ext/921515994/pid.o ${OBJECTDIR}/_ext/921515994/pid_hw.o ${OBJECTDIR}/_ext/921515994/ppool.o ${OBJECTDIR}/_ext/921515994/quat.o ${OBJECTDIR}/_ext/921515994/queue.o ${OBJECTDIR}/_ext/921515994/radio.o ${OBJECTDIR}/_ext/921515994/spi_controller.o ${OBJECTDIR}/_ext/921515994/stopwatch.o ${OBJECTDIR}/_ext/921515994/wii.o ${OBJECTDIR}/_ext/921515994/xl.o ${OBJECTDIR}/_ext/921515994/delay.o ${OBJECTDIR}/source/main.o ${OBJECTDIR}/source/cmd.o ${OBJECTDIR}/source/line_sensor.o
 
 # Source Files
-SOURCEFILES=source/adc_pid.c source/clock_sync.c source/cv.c source/directory.c source/hall.c source/lstrobe.c source/motor_ctrl.c source/net.c source/pbuff.c source/ppbuff.c source/rate.c source/regulator.c source/slew.c source/sqrti.c source/sync_servo.c source/sys_clock.c source/telemetry.c ../imageproc-lib/at86rf231_driver.c ../imageproc-lib/attitude.c ../imageproc-lib/bams.c ../imageproc-lib/battery.c ../imageproc-lib/cam.c ../imageproc-lib/carray.c ../imageproc-lib/controller.c ../imageproc-lib/counter.c ../imageproc-lib/dfilter.c ../imageproc-lib/dfilter_avg.c ../imageproc-lib/dfmem.c ../imageproc-lib/gyro.c ../imageproc-lib/i2c_driver.c ../imageproc-lib/init_default.c ../imageproc-lib/ipspi1.c ../imageproc-lib/larray.c ../imageproc-lib/lcd.c ../imageproc-lib/mac_packet.c ../imageproc-lib/mpu6050.c ../imageproc-lib/ovcam.c ../imageproc-lib/packet_queue.c ../imageproc-lib/payload.c ../imageproc-lib/payload_queue.c ../imageproc-lib/pid.c ../imageproc-lib/pid_hw.c ../imageproc-lib/ppool.c ../imageproc-lib/quat.c ../imageproc-lib/queue.c ../imageproc-lib/radio.c ../imageproc-lib/spi_controller.c ../imageproc-lib/stopwatch.c ../imageproc-lib/wii.c ../imageproc-lib/xl.c ../imageproc-lib/delay.s ../imageproc-lib/ovcamHS.s source/main.c source/cmd.c
+SOURCEFILES=source/adc_pid.c source/clock_sync.c source/directory.c source/hall.c source/lstrobe.c source/motor_ctrl.c source/net.c source/pbuff.c source/ppbuff.c source/rate.c source/regulator.c source/slew.c source/sqrti.c source/sync_servo.c source/sys_clock.c source/telemetry.c ../imageproc-lib/at86rf231_driver.c ../imageproc-lib/attitude.c ../imageproc-lib/bams.c ../imageproc-lib/battery.c ../imageproc-lib/carray.c ../imageproc-lib/controller.c ../imageproc-lib/counter.c ../imageproc-lib/dfilter.c ../imageproc-lib/dfilter_avg.c ../imageproc-lib/dfmem.c ../imageproc-lib/gyro.c ../imageproc-lib/i2c_driver.c ../imageproc-lib/init_default.c ../imageproc-lib/ipspi1.c ../imageproc-lib/larray.c ../imageproc-lib/lcd.c ../imageproc-lib/mac_packet.c ../imageproc-lib/mpu6050.c ../imageproc-lib/packet_queue.c ../imageproc-lib/payload.c ../imageproc-lib/payload_queue.c ../imageproc-lib/pid.c ../imageproc-lib/pid_hw.c ../imageproc-lib/ppool.c ../imageproc-lib/quat.c ../imageproc-lib/queue.c ../imageproc-lib/radio.c ../imageproc-lib/spi_controller.c ../imageproc-lib/stopwatch.c ../imageproc-lib/wii.c ../imageproc-lib/xl.c ../imageproc-lib/delay.s source/main.c source/cmd.c source/line_sensor.c
 
 
 CFLAGS=
@@ -95,13 +95,6 @@ ${OBJECTDIR}/source/clock_sync.o: source/clock_sync.c  nbproject/Makefile-${CND_
 	@${RM} ${OBJECTDIR}/source/clock_sync.o 
 	${MP_CC} $(MP_EXTRA_CC_PRE)  source/clock_sync.c  -o ${OBJECTDIR}/source/clock_sync.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/source/clock_sync.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/source/clock_sync.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
-${OBJECTDIR}/source/cv.o: source/cv.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/source 
-	@${RM} ${OBJECTDIR}/source/cv.o.d 
-	@${RM} ${OBJECTDIR}/source/cv.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  source/cv.c  -o ${OBJECTDIR}/source/cv.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/source/cv.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/source/cv.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 ${OBJECTDIR}/source/directory.o: source/directory.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/source 
@@ -229,13 +222,6 @@ ${OBJECTDIR}/_ext/921515994/battery.o: ../imageproc-lib/battery.c  nbproject/Mak
 	${MP_CC} $(MP_EXTRA_CC_PRE)  ../imageproc-lib/battery.c  -o ${OBJECTDIR}/_ext/921515994/battery.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/921515994/battery.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/battery.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/_ext/921515994/cam.o: ../imageproc-lib/cam.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
-	@${RM} ${OBJECTDIR}/_ext/921515994/cam.o.d 
-	@${RM} ${OBJECTDIR}/_ext/921515994/cam.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  ../imageproc-lib/cam.c  -o ${OBJECTDIR}/_ext/921515994/cam.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/921515994/cam.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/cam.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
 ${OBJECTDIR}/_ext/921515994/carray.o: ../imageproc-lib/carray.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
 	@${RM} ${OBJECTDIR}/_ext/921515994/carray.o.d 
@@ -333,13 +319,6 @@ ${OBJECTDIR}/_ext/921515994/mpu6050.o: ../imageproc-lib/mpu6050.c  nbproject/Mak
 	@${RM} ${OBJECTDIR}/_ext/921515994/mpu6050.o 
 	${MP_CC} $(MP_EXTRA_CC_PRE)  ../imageproc-lib/mpu6050.c  -o ${OBJECTDIR}/_ext/921515994/mpu6050.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/921515994/mpu6050.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/mpu6050.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
-${OBJECTDIR}/_ext/921515994/ovcam.o: ../imageproc-lib/ovcam.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
-	@${RM} ${OBJECTDIR}/_ext/921515994/ovcam.o.d 
-	@${RM} ${OBJECTDIR}/_ext/921515994/ovcam.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  ../imageproc-lib/ovcam.c  -o ${OBJECTDIR}/_ext/921515994/ovcam.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/921515994/ovcam.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/ovcam.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 ${OBJECTDIR}/_ext/921515994/packet_queue.o: ../imageproc-lib/packet_queue.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
@@ -446,6 +425,13 @@ ${OBJECTDIR}/source/cmd.o: source/cmd.c  nbproject/Makefile-${CND_CONF}.mk
 	${MP_CC} $(MP_EXTRA_CC_PRE)  source/cmd.c  -o ${OBJECTDIR}/source/cmd.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/source/cmd.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/source/cmd.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
+${OBJECTDIR}/source/line_sensor.o: source/line_sensor.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/source 
+	@${RM} ${OBJECTDIR}/source/line_sensor.o.d 
+	@${RM} ${OBJECTDIR}/source/line_sensor.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  source/line_sensor.c  -o ${OBJECTDIR}/source/line_sensor.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/source/line_sensor.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/source/line_sensor.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
 else
 ${OBJECTDIR}/source/adc_pid.o: source/adc_pid.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/source 
@@ -460,13 +446,6 @@ ${OBJECTDIR}/source/clock_sync.o: source/clock_sync.c  nbproject/Makefile-${CND_
 	@${RM} ${OBJECTDIR}/source/clock_sync.o 
 	${MP_CC} $(MP_EXTRA_CC_PRE)  source/clock_sync.c  -o ${OBJECTDIR}/source/clock_sync.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/source/clock_sync.o.d"        -g -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/source/clock_sync.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
-${OBJECTDIR}/source/cv.o: source/cv.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/source 
-	@${RM} ${OBJECTDIR}/source/cv.o.d 
-	@${RM} ${OBJECTDIR}/source/cv.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  source/cv.c  -o ${OBJECTDIR}/source/cv.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/source/cv.o.d"        -g -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/source/cv.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 ${OBJECTDIR}/source/directory.o: source/directory.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/source 
@@ -594,13 +573,6 @@ ${OBJECTDIR}/_ext/921515994/battery.o: ../imageproc-lib/battery.c  nbproject/Mak
 	${MP_CC} $(MP_EXTRA_CC_PRE)  ../imageproc-lib/battery.c  -o ${OBJECTDIR}/_ext/921515994/battery.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/921515994/battery.o.d"        -g -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/battery.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/_ext/921515994/cam.o: ../imageproc-lib/cam.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
-	@${RM} ${OBJECTDIR}/_ext/921515994/cam.o.d 
-	@${RM} ${OBJECTDIR}/_ext/921515994/cam.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  ../imageproc-lib/cam.c  -o ${OBJECTDIR}/_ext/921515994/cam.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/921515994/cam.o.d"        -g -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/cam.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
 ${OBJECTDIR}/_ext/921515994/carray.o: ../imageproc-lib/carray.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
 	@${RM} ${OBJECTDIR}/_ext/921515994/carray.o.d 
@@ -698,13 +670,6 @@ ${OBJECTDIR}/_ext/921515994/mpu6050.o: ../imageproc-lib/mpu6050.c  nbproject/Mak
 	@${RM} ${OBJECTDIR}/_ext/921515994/mpu6050.o 
 	${MP_CC} $(MP_EXTRA_CC_PRE)  ../imageproc-lib/mpu6050.c  -o ${OBJECTDIR}/_ext/921515994/mpu6050.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/921515994/mpu6050.o.d"        -g -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/mpu6050.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
-${OBJECTDIR}/_ext/921515994/ovcam.o: ../imageproc-lib/ovcam.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
-	@${RM} ${OBJECTDIR}/_ext/921515994/ovcam.o.d 
-	@${RM} ${OBJECTDIR}/_ext/921515994/ovcam.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  ../imageproc-lib/ovcam.c  -o ${OBJECTDIR}/_ext/921515994/ovcam.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/921515994/ovcam.o.d"        -g -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/ovcam.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 ${OBJECTDIR}/_ext/921515994/packet_queue.o: ../imageproc-lib/packet_queue.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
@@ -811,6 +776,13 @@ ${OBJECTDIR}/source/cmd.o: source/cmd.c  nbproject/Makefile-${CND_CONF}.mk
 	${MP_CC} $(MP_EXTRA_CC_PRE)  source/cmd.c  -o ${OBJECTDIR}/source/cmd.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/source/cmd.o.d"        -g -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/source/cmd.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
+${OBJECTDIR}/source/line_sensor.o: source/line_sensor.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/source 
+	@${RM} ${OBJECTDIR}/source/line_sensor.o.d 
+	@${RM} ${OBJECTDIR}/source/line_sensor.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  source/line_sensor.c  -o ${OBJECTDIR}/source/line_sensor.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/source/line_sensor.o.d"        -g -omf=elf -fast-math -mlarge-code -mlarge-data -O0 -I"./source" -I"../imageproc-lib" -D__IMAGEPROC2 -D__DFMEM_8MBIT -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/source/line_sensor.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
 endif
 
 # ------------------------------------------------------------------------------------
@@ -823,13 +795,6 @@ ${OBJECTDIR}/_ext/921515994/delay.o: ../imageproc-lib/delay.s  nbproject/Makefil
 	${MP_CC} $(MP_EXTRA_AS_PRE)  ../imageproc-lib/delay.s  -o ${OBJECTDIR}/_ext/921515994/delay.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1  -omf=elf -fast-math -I".." -Wa,-MD,"${OBJECTDIR}/_ext/921515994/delay.o.d",--defsym=__MPLAB_BUILD=1,--defsym=__ICD2RAM=1,--defsym=__MPLAB_DEBUG=1,--defsym=__DEBUG=1,--defsym=__MPLAB_DEBUGGER_ICD3=1,-g,--no-relax,-g$(MP_EXTRA_AS_POST)
 	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/delay.o.d"  $(SILENT)  -rsi ${MP_CC_DIR}../  
 	
-${OBJECTDIR}/_ext/921515994/ovcamHS.o: ../imageproc-lib/ovcamHS.s  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
-	@${RM} ${OBJECTDIR}/_ext/921515994/ovcamHS.o.d 
-	@${RM} ${OBJECTDIR}/_ext/921515994/ovcamHS.o 
-	${MP_CC} $(MP_EXTRA_AS_PRE)  ../imageproc-lib/ovcamHS.s  -o ${OBJECTDIR}/_ext/921515994/ovcamHS.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1  -omf=elf -fast-math -I".." -Wa,-MD,"${OBJECTDIR}/_ext/921515994/ovcamHS.o.d",--defsym=__MPLAB_BUILD=1,--defsym=__ICD2RAM=1,--defsym=__MPLAB_DEBUG=1,--defsym=__DEBUG=1,--defsym=__MPLAB_DEBUGGER_ICD3=1,-g,--no-relax,-g$(MP_EXTRA_AS_POST)
-	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/ovcamHS.o.d"  $(SILENT)  -rsi ${MP_CC_DIR}../  
-	
 else
 ${OBJECTDIR}/_ext/921515994/delay.o: ../imageproc-lib/delay.s  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
@@ -837,13 +802,6 @@ ${OBJECTDIR}/_ext/921515994/delay.o: ../imageproc-lib/delay.s  nbproject/Makefil
 	@${RM} ${OBJECTDIR}/_ext/921515994/delay.o 
 	${MP_CC} $(MP_EXTRA_AS_PRE)  ../imageproc-lib/delay.s  -o ${OBJECTDIR}/_ext/921515994/delay.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -omf=elf -fast-math -I".." -Wa,-MD,"${OBJECTDIR}/_ext/921515994/delay.o.d",--defsym=__MPLAB_BUILD=1,-g,--no-relax,-g$(MP_EXTRA_AS_POST)
 	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/delay.o.d"  $(SILENT)  -rsi ${MP_CC_DIR}../  
-	
-${OBJECTDIR}/_ext/921515994/ovcamHS.o: ../imageproc-lib/ovcamHS.s  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/921515994 
-	@${RM} ${OBJECTDIR}/_ext/921515994/ovcamHS.o.d 
-	@${RM} ${OBJECTDIR}/_ext/921515994/ovcamHS.o 
-	${MP_CC} $(MP_EXTRA_AS_PRE)  ../imageproc-lib/ovcamHS.s  -o ${OBJECTDIR}/_ext/921515994/ovcamHS.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -omf=elf -fast-math -I".." -Wa,-MD,"${OBJECTDIR}/_ext/921515994/ovcamHS.o.d",--defsym=__MPLAB_BUILD=1,-g,--no-relax,-g$(MP_EXTRA_AS_POST)
-	@${FIXDEPS} "${OBJECTDIR}/_ext/921515994/ovcamHS.o.d"  $(SILENT)  -rsi ${MP_CC_DIR}../  
 	
 endif
 

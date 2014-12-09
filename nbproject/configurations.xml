@@ -23,7 +23,6 @@
       <itemPath>../imageproc-lib/lcd.h</itemPath>
       <itemPath>../imageproc-lib/mac_packet.h</itemPath>
       <itemPath>../imageproc-lib/mpu6050.h</itemPath>
-      <itemPath>../imageproc-lib/ovcam.h</itemPath>
       <itemPath>../imageproc-lib/packet_queue.h</itemPath>
       <itemPath>../imageproc-lib/payload.h</itemPath>
       <itemPath>../imageproc-lib/payload_queue.h</itemPath>
@@ -38,12 +37,10 @@
       <itemPath>../imageproc-lib/version.h</itemPath>
       <itemPath>../imageproc-lib/wii.h</itemPath>
       <itemPath>../imageproc-lib/xl.h</itemPath>
-      <itemPath>../imageproc-lib/ov7660.h</itemPath>
       <itemPath>./source/adc_pid.h</itemPath>
       <itemPath>./source/clock_sync.h</itemPath>
       <itemPath>./source/cmd.h</itemPath>
       <itemPath>./source/cmd_const.h</itemPath>
-      <itemPath>./source/cv.h</itemPath>
       <itemPath>./source/directory.h</itemPath>
       <itemPath>./source/hall.h</itemPath>
       <itemPath>./source/led.h</itemPath>
@@ -60,7 +57,7 @@
       <itemPath>./source/sys_clock.h</itemPath>
       <itemPath>./source/telemetry.h</itemPath>
       <itemPath>../imageproc-lib/at86rf231_driver.h</itemPath>
-      <itemPath>../imageproc-lib/cam.h</itemPath>
+      <itemPath>source/line_sensor.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -73,7 +70,6 @@
       <logicalFolder name="lib" displayName="lib" projectFiles="true">
         <itemPath>source/adc_pid.c</itemPath>
         <itemPath>source/clock_sync.c</itemPath>
-        <itemPath>source/cv.c</itemPath>
         <itemPath>source/directory.c</itemPath>
         <itemPath>source/hall.c</itemPath>
         <itemPath>source/lstrobe.c</itemPath>
@@ -88,13 +84,13 @@
         <itemPath>source/sync_servo.c</itemPath>
         <itemPath>source/sys_clock.c</itemPath>
         <itemPath>source/telemetry.c</itemPath>
+        <itemPath>source/line_sensor.c</itemPath>
       </logicalFolder>
       <logicalFolder name="shared" displayName="shared" projectFiles="true">
         <itemPath>../imageproc-lib/at86rf231_driver.c</itemPath>
         <itemPath>../imageproc-lib/attitude.c</itemPath>
         <itemPath>../imageproc-lib/bams.c</itemPath>
         <itemPath>../imageproc-lib/battery.c</itemPath>
-        <itemPath>../imageproc-lib/cam.c</itemPath>
         <itemPath>../imageproc-lib/carray.c</itemPath>
         <itemPath>../imageproc-lib/controller.c</itemPath>
         <itemPath>../imageproc-lib/counter.c</itemPath>
@@ -109,7 +105,6 @@
         <itemPath>../imageproc-lib/lcd.c</itemPath>
         <itemPath>../imageproc-lib/mac_packet.c</itemPath>
         <itemPath>../imageproc-lib/mpu6050.c</itemPath>
-        <itemPath>../imageproc-lib/ovcam.c</itemPath>
         <itemPath>../imageproc-lib/packet_queue.c</itemPath>
         <itemPath>../imageproc-lib/payload.c</itemPath>
         <itemPath>../imageproc-lib/payload_queue.c</itemPath>
@@ -124,7 +119,6 @@
         <itemPath>../imageproc-lib/wii.c</itemPath>
         <itemPath>../imageproc-lib/xl.c</itemPath>
         <itemPath>../imageproc-lib/delay.s</itemPath>
-        <itemPath>../imageproc-lib/ovcamHS.s</itemPath>
       </logicalFolder>
       <itemPath>source/main.c</itemPath>
       <itemPath>source/cmd.c</itemPath>
