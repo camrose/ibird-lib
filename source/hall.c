@@ -144,7 +144,7 @@ void __attribute__((__interrupt__, no_auto_psv)) _IC7Interrupt(void) {
     wing_delta = wing_time - old_wing_time;
     old_wing_time = wing_time;
 
-    LED_RED = ~LED_RED;
+    //LED_RED = ~LED_RED;
 
     IFS1bits.IC7IF = 0; // Clear CN interrupt
 }
