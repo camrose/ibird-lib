@@ -20,7 +20,7 @@ typedef LineCamStruct* LineCam;
 typedef struct {
     unsigned long timestamp;
     unsigned int frame_num;
-    unsigned char edges[6];
+    unsigned char edges[2];
     float location;
     float distance;
 } EdgesStruct;

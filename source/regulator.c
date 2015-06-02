@@ -513,30 +513,32 @@ static void processLine(void) {
     Quaternion new_angle,temp_angle;
     curr_edges.edges[0] = 0;
     curr_edges.edges[1] = 0;
-    curr_edges.edges[2] = 0;
-    curr_edges.edges[3] = 0;
-    curr_edges.edges[4] = 0;
-    curr_edges.edges[5] = 0;
     
     if (lsGetMarker(&curr_edges)) {
         marker_center = curr_edges.location;
         line_error = ctrlRunPid(&linePid, marker_center, NULL);
         turn_angle = line_error*(LINE_VIEW_ANGLE/LINE_FRAME_WIDTH);
-        if (curr_edges.distance <= 0.75) {
-            new_angle.w = 0.0;
-            new_angle.x = 0.0;
-            new_angle.y = 0.0;
-            new_angle.z = 1.0;
-            quatRotate(&forward,&new_angle,&temp_angle);
-            rgltrSetQuatRef(&temp_angle);
-        } else {
-            new_angle.w = cos(turn_angle/2.0);
-            new_angle.x = 0.0;
-            new_angle.y = 0.0;
-            new_angle.z = sin(turn_angle/2.0);
-            quatRotate(&forward,&new_angle,&temp_angle);
-            rgltrSetQuatRef(&temp_angle);
-        }
+        new_angle.w = cos(turn_angle/2.0);
+        new_angle.x = 0.0;
+        new_angle.y = 0.0;
+        new_angle.z = sin(turn_angle/2.0);
+        quatRotate(&forward,&new_angle,&temp_angle);
+        rgltrSetQuatRef(&temp_angle);
+//        if (curr_edges.distance <= 0.75) {
+//            new_angle.w = 0.0;
+//            new_angle.x = 0.0;
+//            new_angle.y = 0.0;
+//            new_angle.z = 1.0;
+//            quatRotate(&forward,&new_angle,&temp_angle);
+//            rgltrSetQuatRef(&temp_angle);
+//        } else {
+//            new_angle.w = cos(turn_angle/2.0);
+//            new_angle.x = 0.0;
+//            new_angle.y = 0.0;
+//            new_angle.z = sin(turn_angle/2.0);
+//            quatRotate(&forward,&new_angle,&temp_angle);
+//            rgltrSetQuatRef(&temp_angle);
+//        }
     }
 }
 
@@ -798,7 +800,7 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         //storage->bemf[0] = hallGetBEMF();
         motor_counts = hallGetMotorCounts();
         storage->bemf = motor_counts[0];
-        memcpy(&storage->edges,curr_edges.edges,6*sizeof(unsigned char));
+        memcpy(&storage->edges,curr_edges.edges,2*sizeof(unsigned char));
         storage->distance = curr_edges.distance;
         storage->location = curr_edges.location;
         //storage->bemf[1] = (int) (hallGetError()/1000);

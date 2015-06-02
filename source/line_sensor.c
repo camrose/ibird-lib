@@ -66,6 +66,8 @@
 #define CENTER_TO_WIDTH         (0.2227)
 #define EDGE_THRESH             (1000)
 
+#define SWAP(x,y) if (d[y] < d[x]) { int tmp = d[x]; d[x] = d[y]; d[y] = tmp; }
+
 
 // ==== STATIC VARIABLES ====================================
 
@@ -186,13 +188,14 @@ unsigned char lsGetEdges(Edges edges) {
     int deriv_gauss[9] = {-7,-25,-50,-48,0,48,50,25,7};
     int img_gauss[136];
     int img[128];
-    int peaks_az[3] = {0,0,0};
-    unsigned char peaks_az_loc[3];
-    int peaks_bz[3] = {0,0,0};
-    unsigned char peaks_bz_loc[3];
+    int peaks_az[1] = {0};
+    unsigned char peaks_az_loc[1];
+    int peaks_bz[1] = {0};
+    unsigned char peaks_bz_loc[1];
     int i;
     int val;
     int loc;
+    int tmp;
 
     while (frame == NULL) {
         frame = lsGetFrame();
@@ -203,29 +206,34 @@ unsigned char lsGetEdges(Edges edges) {
     convolve(128,9,img_gauss,img,deriv_gauss);
     for (i=14;i<123;i++) {
         if (img_gauss[i]>img_gauss[i-1] && img_gauss[i+1]<img_gauss[i]) {
-            val = VectorMin(3,peaks_az,&loc);
+            val = VectorMin(1,peaks_az,&loc);
             if (img_gauss[i] > val) {
                 peaks_az[loc] = img_gauss[i];
                 peaks_az_loc[loc] = i-4;
             }
         } else if (img_gauss[i]<img_gauss[i-1] && img_gauss[i+1]>img_gauss[i]){
-            val = VectorMax(3,peaks_bz,&loc);
+            val = VectorMax(1,peaks_bz,&loc);
             if (img_gauss[i] < val) {
                 peaks_bz[loc] = img_gauss[i];
                 peaks_bz_loc[loc] = i-4;
             }
         }
     }
-    for(i=0;i<3;i++){
+    for(i=0;i<1;i++){
         if(abs(peaks_az[i])>EDGE_THRESH) {
             edges->edges[i] = peaks_az_loc[i];
         }
         if(abs(peaks_bz[i])>EDGE_THRESH) {
-            edges->edges[i+3] = peaks_bz_loc[i];
+            edges->edges[i+1] = peaks_bz_loc[i];
         }
     }
     edges->frame_num = frame->frame_num;
     edges->timestamp = frame->timestamp;
+    if (edges->edges[1] < edges->edges[0]) {
+        tmp = edges->edges[1];
+        edges->edges[1] = edges->edges[0];
+        edges->edges[0] = tmp;
+    }
     sort6(edges->edges);
     lsReturnFrame(frame);
     if (edges->edges[0] == 0) {
@@ -246,25 +254,14 @@ unsigned char lsGetMarker(Edges edges) {
         return 0;
     }
 
-    center_width = edges->edges[3] - edges->edges[2];
-    center = ((float)(edges->edges[5] + edges->edges[0]))/2.0;
-    marker_width = edges->edges[5] - edges->edges[0];
+    center_width = edges->edges[1] - edges->edges[0];
+    center = ((float)(edges->edges[1] + edges->edges[0]))/2.0;
+    marker_width = edges->edges[1] - edges->edges[0];
 
-    ratio = (float)center_width/(float)marker_width;
-    ratio_error = fabs(ratio-CENTER_TO_WIDTH);
-    if (fabs(ratio-CENTER_TO_WIDTH) < 0.1) {
-        edges->location = center;
-        edges->distance = PX_TO_M/marker_width;
-        found_marker = 1;
-        return 1;
-    } else {
-        edges->distance = 0;
-        edges->location = 0;
-        found_marker = 0;
-        return 0;
-    }
-
-
+    edges->location = center;
+    edges->distance = PX_TO_M/marker_width;
+    found_marker = 1;
+    return 1;
 }
 
 unsigned char lsFoundMarker() {
@@ -360,7 +357,7 @@ static void convolve(int numElems1,int numElems2,
 
 // Swap sort for 6 items using the Bose-Nelson algorithm
 static void sort6(unsigned char* d) {
-#define SWAP(x,y) if (d[y] < d[x]) { int tmp = d[x]; d[x] = d[y]; d[y] = tmp; }
+//#define SWAP(x,y) if (d[y] < d[x]) { int tmp = d[x]; d[x] = d[y]; d[y] = tmp; }
     SWAP(1, 2);
     SWAP(0, 2);
     SWAP(0, 1);
@@ -373,7 +370,7 @@ static void sort6(unsigned char* d) {
     SWAP(2, 4);
     SWAP(1, 3);
     SWAP(2, 3);
-#undef SWAP
+//#undef SWAP
 }
 
 /**

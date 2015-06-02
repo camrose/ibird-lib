@@ -57,13 +57,13 @@ typedef struct {
     unsigned char xl_data[3*sizeof(int)]; // (6)
     float u[3];         // Outputs (12)
     unsigned int bemf; // BEMF (2)
-    unsigned char edges[6]; // (6)
+    unsigned char edges[2]; // (2)
     float distance;
     float location;
     //float crank; //crank angle (4)
     unsigned long time; // Timestamp (4)
     //float xl_data[3];   // Accel Data (12)
-} RegulatorStateStruct; // Total: 68 bytes
+} RegulatorStateStruct; // Total: 64 bytes
 
 //typedef struct {
 //    pidPos telem;
