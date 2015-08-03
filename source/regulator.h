@@ -129,6 +129,9 @@ void rgltrSetYawPid(PidParams params);
 void rgltrSetPitchPid(PidParams params);
 void rgltrSetRollPid(PidParams params);
 
+void rgltrSetLinePid(PidParams params);
+void rgltrSetLineHeightPid(PidParams params);
+
 /**
  * Set yaw/pitch/roll reference value
  * @param ref - Yaw/pitch/roll reference in radians

@@ -52,7 +52,9 @@
 #include "carray.h"
 #include "counter.h"
 #include "dsp.h"
+#include "larray.h"
 #include <stdlib.h>
+#include <string.h>
 
 // ==== CONSTANTS ===========================================
 
@@ -65,6 +67,7 @@
 #define PX_TO_M                 (35.8209)
 #define CENTER_TO_WIDTH         (0.2227)
 #define EDGE_THRESH             (1000)
+#define MAX_MARKERS             (5)
 
 #define SWAP(x,y) if (d[y] < d[x]) { int tmp = d[x]; d[x] = d[y]; d[y] = tmp; }
 
@@ -75,14 +78,13 @@ static unsigned char is_ready;
 static unsigned int cnt;
 static unsigned int max_cnt;
 //static unsigned int cnt_line;
-LineCam current_frame;
+static LineCam current_frame;
 static unsigned char has_new_frame;
 static unsigned char new_line_sent;
 static unsigned char found_marker;
 
-unsigned int max_sig;
-
 static CircArray empty_frame_pool, full_frame_pool;
+static LinArray marker_list;
 
 static LineCam getEmptyFrame(void);
 static void enqueueEmptyFrame(LineCam frame);
@@ -92,9 +94,19 @@ static void convolve(int numElems1,int numElems2,
         int* dstV,int* srcV1,int* srcV2);
 static void sort6(unsigned char* d);
 
+static void swap2(int* a, int* b, int first, int second);
+static void siftDown(int* a, int* b, int start, int end);
+static void heapify(int* a, int* b, int count);
+static void heapsort(int* a, int* b, int count);
+
+static unsigned char copyMarker(Marker dst, Marker src);
+
+static int indices[109];
 
 static Counter frame_counter;
 static Counter px_counter;
+
+static MarkerStruct default_marker;
 
 // ==== FUNCTION STUBS ======================================
 
@@ -106,6 +118,7 @@ void _T7Interrupt(void);
 // ==== FUNCTION BODIES =====================================
 
 void lsSetup(LineCam frames, unsigned int num_frames, unsigned int fs) {
+    unsigned char* default_hold;
     setupTimer7(fs);
     LS_CLOCK = LOW;
     LS_SI = LOW;
@@ -128,7 +141,21 @@ void lsSetup(LineCam frames, unsigned int num_frames, unsigned int fs) {
         lsReturnFrame(&frames[i]);
     }
 
-    max_sig = 1;
+    for (i = 0; i < 109; i++) {
+        indices[i] = i + 10;
+    }
+
+    marker_list = larrayCreate(MAX_MARKERS);
+    if(marker_list == NULL) {return;}
+
+    default_marker.num_edges = 2;
+    default_marker.threshold = EDGE_THRESH;
+    default_marker.px_to_m = 25.9;
+    default_marker.edges.edges = (unsigned char *)calloc(default_marker.num_edges, sizeof(unsigned char));
+    default_marker.edges.edges[0] = 0;
+    default_marker.edges.edges[1] = 0;
+
+    larrayReplace(marker_list, 0, &default_marker);
 
     is_ready = 1;
     has_new_frame = 0;
@@ -183,19 +210,16 @@ unsigned int lsGetFrameNum(void) {
     return cntrRead(frame_counter);
 }
 
-unsigned char lsGetEdges(Edges edges) {
+unsigned char lsGetEdges(Marker marker) {
     LineCam frame = NULL;
     int deriv_gauss[9] = {-7,-25,-50,-48,0,48,50,25,7};
     int img_gauss[136];
     int img[128];
-    int peaks_az[1] = {0};
-    unsigned char peaks_az_loc[1];
-    int peaks_bz[1] = {0};
-    unsigned char peaks_bz_loc[1];
+    int indices_sort[109];
+    int img_sort[109];
+    int edge_hold[marker->num_edges];
+
     int i;
-    int val;
-    int loc;
-    int tmp;
 
     while (frame == NULL) {
         frame = lsGetFrame();
@@ -204,68 +228,98 @@ unsigned char lsGetEdges(Edges edges) {
         img[i] = (int)(frame->pixels[i]);
     }
     convolve(128,9,img_gauss,img,deriv_gauss);
-    for (i=14;i<123;i++) {
-        if (img_gauss[i]>img_gauss[i-1] && img_gauss[i+1]<img_gauss[i]) {
-            val = VectorMin(1,peaks_az,&loc);
-            if (img_gauss[i] > val) {
-                peaks_az[loc] = img_gauss[i];
-                peaks_az_loc[loc] = i-4;
-            }
-        } else if (img_gauss[i]<img_gauss[i-1] && img_gauss[i+1]>img_gauss[i]){
-            val = VectorMax(1,peaks_bz,&loc);
-            if (img_gauss[i] < val) {
-                peaks_bz[loc] = img_gauss[i];
-                peaks_bz_loc[loc] = i-4;
-            }
+
+    VectorCopy(109,img_sort,&img_gauss[14]);
+    VectorCopy(109,indices_sort,indices);
+
+    heapsort(img_sort, indices_sort, 109);
+
+    for (i=0; i<(marker->num_edges/2); i++) {
+        if(abs(img_sort[i])>EDGE_THRESH) {
+            marker->edges.edges[i] = indices_sort[i];
+        } else {
+            marker->edges.edges[i] = 0;
+        }
+        if(abs(img_sort[108-i])>EDGE_THRESH) {
+            marker->edges.edges[marker->num_edges-1-i] = indices_sort[108-i];
+        } else {
+            marker->edges.edges[marker->num_edges-1-i] = 0;
         }
     }
-    for(i=0;i<1;i++){
-        if(abs(peaks_az[i])>EDGE_THRESH) {
-            edges->edges[i] = peaks_az_loc[i];
-        }
-        if(abs(peaks_bz[i])>EDGE_THRESH) {
-            edges->edges[i+1] = peaks_bz_loc[i];
-        }
+
+    for(i = 0; i < marker->num_edges; i++) {
+        edge_hold[i] = marker->edges.edges[i];
     }
-    edges->frame_num = frame->frame_num;
-    edges->timestamp = frame->timestamp;
-    if (edges->edges[1] < edges->edges[0]) {
-        tmp = edges->edges[1];
-        edges->edges[1] = edges->edges[0];
-        edges->edges[0] = tmp;
+    heapsort(edge_hold, indices_sort, marker->num_edges);
+    for(i = 0; i < marker->num_edges; i++) {
+        marker->edges.edges[i] = edge_hold[i];
     }
-    sort6(edges->edges);
+
+    marker->edges.frame_num = frame->frame_num;
+    marker->edges.timestamp = frame->timestamp;
+    
     lsReturnFrame(frame);
-    if (edges->edges[0] == 0) {
+    if (marker->edges.edges[0] == 0) {
         return 0;
     }
     return 1;
 }
 
-unsigned char lsGetMarker(Edges edges) {
+unsigned char lsGetMarker(Marker marker) {
     float center;
-    float ratio;
-    float ratio_error;
     int marker_width;
-    int center_width;
 
-    if (lsGetEdges(edges) == 0) {
+    if (lsGetEdges(marker) == 0) {
         found_marker = 0;
         return 0;
     }
 
-    center_width = edges->edges[1] - edges->edges[0];
-    center = ((float)(edges->edges[1] + edges->edges[0]))/2.0;
-    marker_width = edges->edges[1] - edges->edges[0];
+    center = ((float)(marker->edges.edges[marker->num_edges-1] + marker->edges.edges[0]))/2.0;
+    marker_width = marker->edges.edges[marker->num_edges-1] - marker->edges.edges[0];
 
-    edges->location = center;
-    edges->distance = PX_TO_M/marker_width;
+    marker->edges.location = center;
+    if (marker_width > 0) {
+        marker->edges.distance = marker->px_to_m/marker_width;
+    } else {
+        marker->edges.distance = -1;
+    }
     found_marker = 1;
+
     return 1;
 }
 
 unsigned char lsFoundMarker() {
     return found_marker;
+}
+
+unsigned char lsGetNumMarkers() {
+    return marker_list->size;
+}
+
+unsigned char lsGetMarkerNumber(Marker m, unsigned char index) {
+    Marker m_hold;
+    m_hold = (Marker)larrayRetrieve(marker_list,index);
+    copyMarker(m, m_hold);
+    if (m == NULL) {
+        return 0;
+    } else {
+        return lsGetMarker(m);
+    }
+}
+
+unsigned char lsAddMarker(Marker m, unsigned char index) {
+    LinArrayItem item;
+    m->edges.edges = (unsigned char *)calloc(m->num_edges,sizeof(unsigned char));
+    if (index > -1) {
+        item = larrayReplace(marker_list,index,m);
+    } else {
+        item = larrayReplace(marker_list,marker_list->size,m);
+    }
+    if (item == NULL) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 // =========== Private Functions ===============================================
@@ -355,6 +409,50 @@ static void convolve(int numElems1,int numElems2,
     }
 }
 
+static void swap2(int* a, int* b, int first, int second) {
+    int tmp = a[first];
+    a[first] = a[second];
+    a[second] = tmp;
+    tmp = b[first];
+    b[first] = b[second];
+    b[second] = tmp;
+}
+
+static void siftDown(int* a, int* b, int start, int end) {
+    int child, swap, root;
+    root = start;
+    while (root*2+1 <= end) {
+        child = root*2 + 1;
+        swap = root;
+        if (a[swap] < a[child]) {swap = child;}
+        if (child+1 <= end && a[swap] < a[child+1]) {swap = child+1;}
+        if (swap == root) {return;}
+        else {
+            swap2(a,b,root,swap);
+            root = swap;
+        }
+    }
+}
+
+static void heapify(int* a, int* b, int count) {
+    int start = (int)(floor((count-2)/2));
+    while (start >= 0) {
+        siftDown(a, b, start, count-1);
+        start = start-1;
+    }
+}
+
+static void heapsort(int* a, int* b, int count) {
+    int end;
+    heapify(a, b, count);
+    end = count-1;
+    while (end > 0) {
+        swap2(a, b, end, 0);
+        end = end - 1;
+        siftDown(a, b, 0, end);
+    }
+}
+
 // Swap sort for 6 items using the Bose-Nelson algorithm
 static void sort6(unsigned char* d) {
 //#define SWAP(x,y) if (d[y] < d[x]) { int tmp = d[x]; d[x] = d[y]; d[y] = tmp; }
@@ -371,6 +469,13 @@ static void sort6(unsigned char* d) {
     SWAP(1, 3);
     SWAP(2, 3);
 //#undef SWAP
+}
+
+static unsigned char copyMarker(Marker dst, Marker src) {
+    Marker ret;
+    ret = memcpy(dst,src,sizeof(MarkerStruct));
+    if (ret == NULL) { return 0; }
+    return 1;
 }
 
 /**

@@ -106,7 +106,7 @@ typedef struct {
 
 // =========== Static Variables ================================================
 // Control loop objects
-CtrlPidParamStruct yawPid, pitchPid, thrustPid, linePid;
+CtrlPidParamStruct yawPid, pitchPid, thrustPid, linePid, lineHeightPid;
 DigitalFilterStruct yawRateFilter, pitchRateFilter, rollRateFilter;
 
 // State info
@@ -115,7 +115,7 @@ static unsigned char yaw_filter_ready = 0, pitch_filter_ready = 0, roll_filter_r
 static RegulatorMode reg_mode;
 static RegulatorOutput rc_outputs;
 static Quaternion reference, limited_reference, pose, temp_rot, forward;
-static EdgesStruct curr_edges;
+static MarkerStruct curr_marker;
 static int eight_stage = 0;
 
 // Telemetry buffering
@@ -128,7 +128,7 @@ static float runPitchControl(float pitch);
 static float runRollControl(float roll);
 static int updateBEMF();
 
-static void processLine();
+static unsigned char processLine(Quaternion* quat, float* thrust);
 static void calculateError(RegulatorError *error);
 static void calculateError2(Quaternion *ref_temp, RegulatorError *error);
 static void filterError(RegulatorError *error);
@@ -175,6 +175,7 @@ void rgltrSetup(float ts) {
     ctrlInitPidParams(&pitchPid, ts);
     ctrlInitPidParams(&thrustPid, ts);
     ctrlInitPidParams(&linePid, ts);
+    ctrlInitPidParams(&lineHeightPid, ts);
 
     ppbuffInit(&reg_state_buff);
     ppbuffWriteActive(&reg_state_buff, &reg_states[0]);
@@ -232,6 +233,7 @@ void rgltrSetOff(void) {
     ctrlStop(&yawPid);
     ctrlStop(&pitchPid);
     ctrlStop(&thrustPid);
+    ctrlStop(&linePid);
     hallPIDOff();
     servoStop();
 }
@@ -241,6 +243,8 @@ void rgltrSetTrack(void) {
     ctrlStart(&yawPid);
     ctrlStart(&pitchPid);
     ctrlStart(&thrustPid);
+    ctrlStart(&linePid);
+    //ctrlStart(&lineHeightPid);
     servoStart();
 }
 
@@ -258,6 +262,7 @@ void rgltrSetHall(void) {
     ctrlStart(&yawPid);
     ctrlStart(&pitchPid);
     ctrlStart(&linePid);
+    ctrlStart(&lineHeightPid);
     hallPIDOn();
     servoStart();
 }
@@ -329,6 +334,15 @@ void rgltrSetLinePid(PidParams params) {
     ctrlSetRefWeigts(&linePid, params->beta, params->gamma);
     ctrlSetSaturation(&linePid, LINE_SAT_MAX, LINE_SAT_MIN);
     
+}
+
+void rgltrSetLineHeightPid(PidParams params) {
+
+    ctrlSetPidParams(&lineHeightPid, params->ref, params->kp, params->ki, params->kd);
+    ctrlSetPidOffset(&lineHeightPid, params->offset);
+    ctrlSetRefWeigts(&lineHeightPid, params->beta, params->gamma);
+    ctrlSetSaturation(&lineHeightPid, LINE_SAT_MAX, LINE_SAT_MIN);
+
 }
 
 void rgltrSetYawRef(float ref) {
@@ -415,6 +429,9 @@ void rgltrRunController(void) {
     RegulatorOutput output;
     Quaternion ref_temp;
     RateStruct rate_set;
+    Quaternion line_ref;
+    float height = 0.0;
+    unsigned char new_line = 0;
 
     if(!is_ready) { return; }    
 
@@ -484,17 +501,26 @@ void rgltrRunController(void) {
     }
     if (line_track) {
         if (lsHasNewFrame()) {
-            processLine();
+            new_line = processLine(&line_ref,&height);
         }
     }
 
     attEstimatePose();  // Update attitude estimate
     //updated_bemf = updateBEMF();
+    
+    attGetQuat(&pose);
+
+    if (line_track && new_line) {
+        quatRotate(&pose,&line_ref,&ref_temp);
+        rgltrSetQuatRef(&ref_temp);
+        //ctrlSetPidOffset(&thrustPid, ctrlGetPidOffset(&thrustPid)+thrust);
+        error.roll_err = height;
+    }
 
     rateProcess();      // Update limited_reference
     slewProcess(&reference, &limited_reference); // Apply slew rate limiting
 
-    attGetQuat(&pose);
+
     calculateError(&error);
     calculateOutputs(&error, &output);
 
@@ -508,37 +534,26 @@ void rgltrRunController(void) {
 
 // =========== Private Functions ===============================================
 
-static void processLine(void) {
-    float marker_center, center_frame = 63.5, turn_angle, line_error;
-    Quaternion new_angle,temp_angle;
-    curr_edges.edges[0] = 0;
-    curr_edges.edges[1] = 0;
+static unsigned char processLine(Quaternion* quat, float* thrust) {
+    float marker_center, turn_angle, line_error, height_error, marker_height;
+    Quaternion new_angle;
     
-    if (lsGetMarker(&curr_edges)) {
-        marker_center = curr_edges.location;
+    if (lsGetMarkerNumber(&curr_marker, 0)) {
+        marker_center = curr_marker.edges.location;
         line_error = ctrlRunPid(&linePid, marker_center, NULL);
         turn_angle = line_error*(LINE_VIEW_ANGLE/LINE_FRAME_WIDTH);
         new_angle.w = cos(turn_angle/2.0);
         new_angle.x = 0.0;
         new_angle.y = 0.0;
         new_angle.z = sin(turn_angle/2.0);
-        quatRotate(&forward,&new_angle,&temp_angle);
-        rgltrSetQuatRef(&temp_angle);
-//        if (curr_edges.distance <= 0.75) {
-//            new_angle.w = 0.0;
-//            new_angle.x = 0.0;
-//            new_angle.y = 0.0;
-//            new_angle.z = 1.0;
-//            quatRotate(&forward,&new_angle,&temp_angle);
-//            rgltrSetQuatRef(&temp_angle);
-//        } else {
-//            new_angle.w = cos(turn_angle/2.0);
-//            new_angle.x = 0.0;
-//            new_angle.y = 0.0;
-//            new_angle.z = sin(turn_angle/2.0);
-//            quatRotate(&forward,&new_angle,&temp_angle);
-//            rgltrSetQuatRef(&temp_angle);
-//        }
+        memcpy(quat,&new_angle,sizeof(Quaternion));
+
+        marker_height = curr_marker.edges.distance;
+        //height_error = ctrlRunPid(&lineHeightPid, marker_height, NULL);
+        memcpy(thrust,&marker_height,sizeof(float));
+        return 1;
+    } else {
+        return 0;
     }
 }
 
@@ -626,13 +641,13 @@ static void calculateError(RegulatorError *error) {
     if(err_quat.w == 1.0) { // a = 0 case
         error->yaw_err = 0.0;
         error->pitch_err = 0.0;
-        error->roll_err = 0.0;
+        //error->roll_err = 0.0;
     } else {
         a_2 = bams16Acos(err_quat.w); // w = cos(a/2)             
         scale = bams16ToFloatRad(a_2*2)/bams16Sin(a_2); // a/sin(a/2)
         error->yaw_err = err_quat.z*scale;
         error->pitch_err = err_quat.y*scale;
-        error->roll_err = err_quat.x*scale;
+        //error->roll_err = err_quat.x*scale;
     }
     
 }
@@ -663,7 +678,7 @@ static void calculateOutputs(RegulatorError *error, RegulatorOutput *output) {
 
         output->steer = runYawControl(error->yaw_err);
         output->elevator = runPitchControl(error->pitch_err);        
-        output->thrust = runRollControl(error->pitch_err);
+        output->thrust = runRollControl(error->roll_err);
 
     } else if(reg_mode == REG_TRACK_HALL){
         
@@ -800,9 +815,9 @@ static void logTrace(RegulatorError *error, RegulatorOutput *output) {
         //storage->bemf[0] = hallGetBEMF();
         motor_counts = hallGetMotorCounts();
         storage->bemf = motor_counts[0];
-        memcpy(&storage->edges,curr_edges.edges,2*sizeof(unsigned char));
-        storage->distance = curr_edges.distance;
-        storage->location = curr_edges.location;
+        memcpy(&storage->edges,curr_marker.edges.edges,2*sizeof(unsigned char));
+        storage->distance = curr_marker.edges.distance;
+        storage->location = curr_marker.edges.location;
         //storage->bemf[1] = (int) (hallGetError()/1000);
         //storage->crank = crankAngle;
         //storage->crank = (float) hallGetError();

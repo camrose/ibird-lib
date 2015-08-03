@@ -20,11 +20,19 @@ typedef LineCamStruct* LineCam;
 typedef struct {
     unsigned long timestamp;
     unsigned int frame_num;
-    unsigned char edges[2];
+    unsigned char *edges;
     float location;
     float distance;
 } EdgesStruct;
 typedef EdgesStruct* Edges;
+
+typedef struct {
+    unsigned char num_edges;
+    unsigned int threshold;
+    float px_to_m;
+    EdgesStruct edges;
+} MarkerStruct;
+typedef MarkerStruct* Marker;
 
 void lsSetup(LineCam frames, unsigned int num_frames, unsigned int fs);
 void lsStartCapture(unsigned char flag);
@@ -33,9 +41,12 @@ LineCam lsGetFrame();
 void lsSetExposure(unsigned int et, unsigned int fs);
 void lsReturnFrame(LineCam frame);
 unsigned int lsGetFrameNum(void);
-unsigned char lsGetEdges(Edges edges);
-unsigned char lsGetMarker(Edges edges);
+unsigned char lsGetEdges(Marker marker);
+unsigned char lsGetMarker(Marker marker);
 unsigned char lsFoundMarker();
+unsigned char lsGetNumMarkers();
+unsigned char lsGetMarkerNumber(Marker m, unsigned char index);
+unsigned char lsAddMarker(Marker m, unsigned char index);
 
 #endif // __LINE_SENSOR_H
 

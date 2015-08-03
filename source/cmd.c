@@ -776,29 +776,27 @@ static void cmdGetLineEdges(MacPacket packet) {
     unsigned int srcAddr, srcPan;
     MacPacket response;
     Payload pld;
-    EdgesStruct edges;
-    edges.edges[0] = 0;
-    edges.edges[1] = 0;
-    edges.edges[2] = 0;
-    edges.edges[3] = 0;
-    edges.edges[4] = 0;
-    edges.edges[5] = 0;
+    MarkerStruct m;
+    if(lsGetMarkerNumber(&m, 0)) {
+        srcAddr = macGetSrcAddr(packet);
+        srcPan = macGetSrcPan(packet);
 
-    lsGetEdges(&edges);
+        response = radioRequestPacket(16 + (unsigned int)m.num_edges);
+        if(response == NULL) { return; }
+        macSetDestAddr(response, srcAddr);
+        macSetDestPan(response, srcPan);
+        pld = macGetPayload(response);
 
-    srcAddr = macGetSrcAddr(packet);
-    srcPan = macGetSrcPan(packet);
-
-    response = radioRequestPacket(sizeof(EdgesStruct));
-    if(response == NULL) { return; }
-    macSetDestAddr(response, srcAddr);
-    macSetDestPan(response, srcPan);
-    pld = macGetPayload(response);
-    
-    paySetData(pld, sizeof(EdgesStruct), (unsigned char*)&edges);
-    paySetStatus(pld, 0);
-    paySetType(pld, CMD_LINE_EDGE_RESPONSE);
-    while(!radioEnqueueTxPacket(response));
+        paySetData(pld, 2, (unsigned char*)&m.edges.frame_num);
+        payAppendData(pld, 2, 2, (unsigned char*)&m.edges.frame_num);
+        payAppendData(pld, 4, 4, (unsigned char*)&m.edges.timestamp);
+        payAppendData(pld, 8, 4, (unsigned char*)&m.edges.distance);
+        payAppendData(pld, 12, 4, (unsigned char *)&m.edges.location);
+        payAppendData(pld, 16, 1*m.num_edges, (unsigned char*)m.edges.edges);
+        paySetStatus(pld, 0);
+        paySetType(pld, CMD_LINE_EDGE_RESPONSE);
+        while(!radioEnqueueTxPacket(response));
+    }
 }
 
 static void cmdFoundMarker(MacPacket packet) {
