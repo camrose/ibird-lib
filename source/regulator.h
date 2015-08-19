@@ -56,7 +56,7 @@ typedef struct {
     unsigned char gyro_data[3*sizeof(int)]; // (6)
     unsigned char xl_data[3*sizeof(int)]; // (6)
     float u[3];         // Outputs (12)
-    unsigned int bemf; // BEMF (2)
+    unsigned int bemf[3]; // BEMF (2)
     unsigned char edges[2]; // (2)
     float distance;
     float location;
@@ -94,6 +94,12 @@ typedef struct {
 
 typedef PidParamsStruct *PidParams;
 
+typedef struct {
+    unsigned char use_line_sensor;
+} ExperimentStruct;
+
+typedef ExperimentStruct *Experiment;
+
 /**
  * Set up regulator module
  * @param ts - Execution period
@@ -120,6 +126,7 @@ void rgltrSetOffsets(float *offsets);
 void rgltrSetYawRateFilter(RateFilterParams params);
 void rgltrSetPitchRateFilter(RateFilterParams params);
 void rgltrSetRollRateFilter(RateFilterParams params);
+void rgltrSetLineRateFilter(RateFilterParams params);
 
 /**
  * Set yaw/pitch/roll PID parameters
@@ -160,6 +167,15 @@ void rgltrStopEight(void);
 
 void rgltrStartLine(void);
 void rgltrStopLine(void);
+
+void rgltrSetEmptyThreshold(unsigned int);
+void rgltrSetHeightFilter(unsigned int);
+
+void rgltrSetExperiment(Experiment exper);
+void rgltrStartExperiment(void);
+void rgltrEndExperiment(void);
+void rgltrSetLineOffsets(float *offsets);
+void rgltrSetLineRef(float *refs);
 
 /**
  * Execute control loop iteration. This method should be called regularly every

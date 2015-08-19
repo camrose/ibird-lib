@@ -171,6 +171,12 @@ static void cmdTrackMarker(MacPacket packet);
 static void cmdFoundMarker(MacPacket packet);
 
 static void cmdSetLinePid(MacPacket packet);
+static void cmdSetEmptyThreshold(MacPacket packet);
+static void cmdSetHeightFilter(MacPacket packet);
+static void cmdToggleExperiment(MacPacket packet);
+static void cmdSetExperiment(MacPacket packet);
+static void cmdSetLineOffsets(MacPacket packet);
+static void cmdSetLineRef(MacPacket packet);
 
 // =============== Public Functions ============================================
 unsigned int cmdSetup(unsigned int queue_size) {
@@ -262,6 +268,12 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_FOUND_MARKER_REQUEST] = &cmdFoundMarker;
 
     cmd_func[CMD_SET_LINE_PID] = &cmdSetLinePid;
+    cmd_func[CMD_SET_EMPTY_THRESHOLD] = &cmdSetEmptyThreshold;
+    cmd_func[CMD_SET_HEIGHT_FILTER] = &cmdSetHeightFilter;
+    cmd_func[CMD_TOGGLE_EXPERIMENT] = &cmdToggleExperiment;
+    cmd_func[CMD_SET_EXPERIMENT] = &cmdSetExperiment;
+    cmd_func[CMD_SET_LINE_OFFSETS] = &cmdSetLineOffsets;
+    cmd_func[CMD_SET_LINE_REF] = &cmdSetLineRef;
 
     return 1;
     
@@ -544,7 +556,18 @@ static void cmdSetLinePid(MacPacket packet) {
     params = (PidParamsStruct*) frame;
 
     rgltrSetLinePid(&params[0]);
+    rgltrSetLineHeightPid(&params[1]);
 
+}
+
+static void cmdSetHeightFilter(MacPacket packet) {
+    Payload pld;
+    unsigned int *params;
+
+    pld = macGetPayload(packet);
+    params = (unsigned int*) payGetData(pld);
+
+    rgltrSetHeightFilter(params[0]);
 }
 
 static void cmdSetRegulatorRateFilter(MacPacket packet) {
@@ -560,10 +583,16 @@ static void cmdSetRegulatorRateFilter(MacPacket packet) {
     params.type = frame[1];
     params.xcoeffs = frame + 2; // Order + 1 floats per array;
     params.ycoeffs = params.xcoeffs + (params.order + 1); // Typed pointer magic
-    
-    rgltrSetYawRateFilter(&params);
-    rgltrSetPitchRateFilter(&params);
-    rgltrSetRollRateFilter(&params);
+
+    if (params.type == 0) {
+        rgltrSetYawRateFilter(&params);
+    } else if (params.type == 1) {
+        rgltrSetPitchRateFilter(&params);
+    } else if (params.type == 2) {
+        rgltrSetRollRateFilter(&params);
+    } else if (params.type == 3) {
+        rgltrSetLineRateFilter(&params);
+    }
     
 }
   
@@ -619,6 +648,47 @@ static void cmdTrackMarker(MacPacket packet) {
         rgltrStartLine();
     }
 }
+
+static void cmdSetExperiment(MacPacket packet) {
+    Payload pld;
+    unsigned char *frame;
+    Experiment e;
+
+    pld = macGetPayload(packet);
+    frame = payGetData(pld);
+    e = (Experiment) frame;
+
+    rgltrSetExperiment(e);
+}
+
+static void cmdToggleExperiment(MacPacket packet) {
+    Payload pld = macGetPayload(packet);
+    unsigned char flag = *(payGetData(pld));
+
+    if(flag == 1) {
+        rgltrStartExperiment();
+    } else if(flag == 0) {
+        rgltrEndExperiment();
+    }
+}
+
+static void cmdSetLineOffsets(MacPacket packet) {
+
+    float* frame = payGetData(macGetPayload(packet));
+    rgltrSetLineOffsets(frame);
+
+}
+
+static void cmdSetLineRef(MacPacket packet) {
+
+    Payload pld = macGetPayload(packet);
+    float *ref = (float*)payGetData(pld);
+
+    rgltrSetLineRef(ref);
+
+}
+
+
 
 // ====== Telemetry and Sensors ===============================================
 static void cmdSetLogging(MacPacket packet) {
@@ -770,6 +840,13 @@ static void cmdLsSetExposure(MacPacket packet) {
     unsigned int* data = (unsigned int *)(payGetData(pld));
 
     lsSetExposure(data[0], data[1]);
+}
+
+static void cmdSetEmptyThreshold(MacPacket packet) {
+    Payload pld = macGetPayload(packet);
+    unsigned int data = *(payGetData(pld));
+
+    rgltrSetEmptyThreshold(data);
 }
 
 static void cmdGetLineEdges(MacPacket packet) {

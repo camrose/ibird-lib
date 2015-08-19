@@ -138,6 +138,12 @@
 #define CMD_FOUND_MARKER_RESPONSE       (0x4E)
 
 #define CMD_SET_LINE_PID                (0x3A)
+#define CMD_SET_EMPTY_THRESHOLD         (0x3B)
+#define CMD_SET_HEIGHT_FILTER           (0x3C)
+#define CMD_SET_EXPERIMENT              (0x3D)
+#define CMD_TOGGLE_EXPERIMENT           (0x3E)
+#define CMD_SET_LINE_REF                (0x3F)
+#define CMD_SET_LINE_OFFSETS            (0x47)
 
 // CMD values of 0x80(128) - 0xEF(239) are reserved.
 // CMD values of 0xF0(240) - 0xFF(255) are reserved for future use
