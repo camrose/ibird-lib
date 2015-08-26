@@ -53,6 +53,6 @@ typedef LStrobeParamStruct* LStrobeParam;
 void lstrobeSetup(void);
 void lstrobeSetParam(LStrobeParam params);
 void lstrobeGetParam(LStrobeParam params);
-void lstrobeStart(void);
+void lstrobeStart(LStrobeParam params);
 
 #endif

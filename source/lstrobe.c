@@ -44,8 +44,10 @@
 #include "sys_clock.h"
 #include "cam.h"
 
+#define FCY                     (40000000)  // 40 MIPS
 #define DEFAULT_ON_TIME         (0)
 #define DEFAULT_OFF_TIME        (0)
+#define DEFAULT_FREQ            (2)
  
 #define STROBE_ON               (1)
 #define STROBE_OFF              (0)
@@ -68,12 +70,19 @@ static void phaseLock(LStrobeParam param);
 static void setupTimer3(void);
 
 void lstrobeSetup(void) {
+    LStrobeParamStruct defaults;
 
     setupTimer3();
 
     STROBE = STROBE_ON;
     state = LT_OFF;
 
+    defaults.off_time = (FCY/2)/(256*DEFAULT_FREQ);
+    defaults.on_time = (FCY/2)/(256*DEFAULT_FREQ);
+    defaults.period_offset = 0;
+    defaults.period = (FCY/2)/(256*DEFAULT_FREQ);
+    lstrobeSetParam(&defaults);
+    
     runs = 0;
     is_ready = 1;
     
@@ -81,11 +90,10 @@ void lstrobeSetup(void) {
  
 void lstrobeSetParam(LStrobeParam param) {
 
-    target.period = param->period;
+    target.period = (FCY/2)/(256*param->period);
     target.period_offset = param->period_offset;
-    target.on_time = param->on_time;
-    target.off_time = param->off_time;
-
+    target.on_time = (FCY/2)/(256*param->on_time);
+    target.off_time = (FCY/2)/(256*param->off_time);
 }
 
 void lstrobeGetParam(LStrobeParam param) {
@@ -97,9 +105,10 @@ void lstrobeGetParam(LStrobeParam param) {
 
 }
 
-void lstrobeStart(void) {
+void lstrobeStart(LStrobeParam param) {
 
     if(!is_ready) { return; }
+    lstrobeSetParam(param);
     phaseLock(&target);
     
     
@@ -115,13 +124,13 @@ void __attribute__((interrupt, no_auto_psv)) _T3Interrupt(void) {
 
     if(state == LT_ON) {
         STROBE = STROBE_OFF;
-        LED_RED = 0;
+        //LED_RED = 0;
         PR3 = target.off_time;
         state = LT_OFF;
 
     } else if(state == LT_OFF) {
         STROBE = STROBE_ON;
-        LED_RED = 1;
+        //LED_RED = 1;
         PR3 = target.on_time;
         state = LT_ON;
     } 
@@ -134,7 +143,7 @@ static void phaseLock(LStrobeParam params) {
     
     DisableIntT3;
     
-    PR3 = params->period + params->period_offset - 
+    PR3 = params->period + params->period_offset -
             sclockGetGlobalTicks() % params->period;
     state = LT_PL;
 

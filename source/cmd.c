@@ -844,7 +844,7 @@ static void cmdLsSetExposure(MacPacket packet) {
 
 static void cmdSetEmptyThreshold(MacPacket packet) {
     Payload pld = macGetPayload(packet);
-    unsigned int data = *(payGetData(pld));
+    unsigned int *data = (unsigned int *)(payGetData(pld));
 
     rgltrSetEmptyThreshold(data);
 }
@@ -1171,10 +1171,12 @@ static void cmdNop(MacPacket packet) {
 }
 
 static void cmdStartStrobe(MacPacket packet) {
+    LStrobeParam params;
+    
     Payload pld = macGetPayload(packet);
-    unsigned char flag = *(payGetData(pld));
+    params = (LStrobeParam)(payGetData(pld));
 
-    lstrobeStart();
+    lstrobeStart(params);
 }
 
 

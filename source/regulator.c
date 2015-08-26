@@ -118,7 +118,7 @@ static RegulatorOutput rc_outputs;
 static Quaternion reference, limited_reference, pose, temp_rot, forward;
 static MarkerStruct curr_marker;
 static int eight_stage = 0;
-static unsigned int empty_frames, empty_thresh;
+static unsigned int empty_frames, empty_thresh, full_frames, full_thresh;
 static float prev_yaw_out = 0.0, prev_thrust_out = 0.0;
 static ExperimentStruct exp1;
 
@@ -217,6 +217,8 @@ void rgltrSetup(float ts) {
     prev_time = 0;
     empty_frames = 0;
     empty_thresh = 0;
+    full_thresh = 0;
+    full_frames = 0;
     exp1.use_line_sensor = 0;
 }
 
@@ -243,7 +245,7 @@ void rgltrSetOff(void) {
     ctrlStop(&pitchPid);
     ctrlStop(&thrustPid);
     ctrlStop(&linePid);
-    ctrlStart(&lineHeightPid);
+    ctrlStop(&lineHeightPid);
     hallPIDOff();
     servoStop();
 }
@@ -365,14 +367,14 @@ void rgltrSetLineHeightPid(PidParams params) {
 
     ctrlSetPidParams(&lineHeightPid, params->ref, params->kp, params->ki, params->kd);
     ctrlSetPidOffset(&lineHeightPid, params->offset);
-    prev_thrust_out = params->offset;
     ctrlSetRefWeigts(&lineHeightPid, params->beta, params->gamma);
     ctrlSetSaturation(&lineHeightPid, ROLL_SAT_MAX, ROLL_SAT_MIN);
 
 }
 
-void rgltrSetEmptyThreshold(unsigned int thresh) {
-    empty_thresh = thresh;
+void rgltrSetEmptyThreshold(unsigned int *thresh) {
+    empty_thresh = thresh[0];
+    full_thresh = thresh[1];
 }
 
 void rgltrSetYawRef(float ref) {
@@ -449,7 +451,7 @@ void rgltrStartExperiment(void) {
     run_experiment = 1;
     ctrlStop(&lineHeightPid);
     if (!exp1.use_line_sensor) {
-        rgltrStopLine();
+        ctrlStop(&linePid);
     }
     //ctrlStart(&thrustPid);
 }
@@ -457,7 +459,8 @@ void rgltrStartExperiment(void) {
 void rgltrEndExperiment(void) {
     run_experiment = 0;
     ctrlStart(&lineHeightPid);
-    rgltrStartLine();
+    ctrlStart(&linePid);
+    //rgltrStartLine();
     //ctrlStart(&thrustPid);
 }
 
@@ -479,6 +482,7 @@ void rgltrSetLineOffsets(float *offsets) {
 
     ctrlSetPidOffset(&linePid, offsets[0]);
     ctrlSetPidOffset(&lineHeightPid, offsets[1]);
+    prev_thrust_out = offsets[1];
 
 }
 
@@ -566,7 +570,14 @@ void rgltrRunController(void) {
         if (lsHasNewFrame()) {
             new_line = processLine(&line_pos,&line_height);
             if (new_line) {
-                yaw_ctrl = 0;
+                if (full_frames > full_thresh) {
+                    yaw_ctrl = 0;
+                }
+                empty_frames = 0;
+                full_frames++;
+            } else {
+                full_frames = 0;
+                empty_frames++;
             }
         } else {
             new_line = 0;
@@ -579,15 +590,10 @@ void rgltrRunController(void) {
     attGetQuat(&pose);
 
 
-    if (line_track && empty_frames > empty_thresh && empty_thresh > 0 && !run_experiment) {
-        new_angle.w = 0.0;
-        new_angle.x = 0.0;
-        new_angle.y = 0.0;
-        new_angle.z = 1.0;
-        quatRotate(&forward,&new_angle,&ref_temp);
-        quatCopy(&forward,&ref_temp);
+    if (line_track && empty_frames > empty_thresh && empty_thresh > 0 && !run_experiment && !yaw_ctrl) {
+        quat180(&forward);
         rgltrSetQuatRef(&forward);
-        empty_frames = 0;
+        yaw_ctrl = 1;
     }
 
     rateProcess();      // Update limited_reference
@@ -595,7 +601,7 @@ void rgltrRunController(void) {
 
     calculateError(&error);
 
-    if (line_track && new_line) {
+    if (line_track && new_line && !yaw_ctrl) {
         if (height_filter_ready) {
             error.roll_err = medianFilterApply(&heightFilter, line_height);
         } else {
@@ -603,9 +609,6 @@ void rgltrRunController(void) {
         }
         error.yaw_err = line_pos;
         empty_frames = 0;
-    } else if (line_track && empty_frames < empty_thresh) {
-        yaw_ctrl = 1;
-        empty_frames++;
     }
 
     calculateOutputs(&error, &output, yaw_ctrl);
@@ -777,9 +780,13 @@ static void calculateOutputs(RegulatorError *error, RegulatorOutput *output, uns
         if (line_track && new_line) {
             output->steer = runLineControl(error->yaw_err);
             output->thrust = runLineHeightControl(error->roll_err);
-            prev_thrust_out = output->steer;
+            prev_thrust_out = output->thrust;
+            prev_yaw_out = output->steer;
         } else if (line_track && yaw_ctrl) {
             output->steer = runYawControl(error->yaw_err);
+            output->thrust = prev_thrust_out;
+        } else if (line_track) {
+            output->steer = prev_yaw_out;
             output->thrust = prev_thrust_out;
         } else if (!line_track) {
             output->steer = runYawControl(error->yaw_err);
@@ -788,6 +795,11 @@ static void calculateOutputs(RegulatorError *error, RegulatorOutput *output, uns
         output->elevator = runPitchControl(error->pitch_err);
         if (run_experiment) {
             output->thrust = runRollControl(error->roll_err);
+            prev_yaw_out = output->steer;
+            if (!exp1.use_line_sensor) {
+                output->steer = runYawControl(error->yaw_err);
+                prev_yaw_out = output->steer;
+            }
         }
 
     } else if(reg_mode == REG_TRACK_HALL){

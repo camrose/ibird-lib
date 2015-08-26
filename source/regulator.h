@@ -168,7 +168,7 @@ void rgltrStopEight(void);
 void rgltrStartLine(void);
 void rgltrStopLine(void);
 
-void rgltrSetEmptyThreshold(unsigned int);
+void rgltrSetEmptyThreshold(unsigned int *thresh);
 void rgltrSetHeightFilter(unsigned int);
 
 void rgltrSetExperiment(Experiment exper);
