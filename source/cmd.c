@@ -144,6 +144,9 @@ static void cmdZeroEstimate(MacPacket packet);
 static void cmdRequestAttitude(MacPacket packet);
 static void cmdResponseAttitude(MacPacket packet);
 
+static void cmdRequestState(MacPacket packet);
+static void cmdResponseState(MacPacket packet);
+
 static void cmdSetTelemSubsample(MacPacket packet);
 static void cmdSetSlewLimit(MacPacket packet);
 
@@ -245,6 +248,9 @@ unsigned int cmdSetup(unsigned int queue_size) {
     cmd_func[CMD_ZERO_ESTIMATE] = &cmdZeroEstimate;
     cmd_func[CMD_REQUEST_ATTITUDE] = &cmdRequestAttitude;
     cmd_func[CMD_RESPONSE_ATTITUDE] = &cmdResponseAttitude;
+
+    cmd_func[CMD_REQUEST_STATE] = &cmdRequestState;
+    cmd_func[CMD_RESPONSE_STATE] = &cmdResponseState;
     
     cmd_func[CMD_SET_TELEM_SUBSAMPLE] = &cmdSetTelemSubsample;
     cmd_func[CMD_SET_SLEW_LIMIT] = &cmdSetSlewLimit;

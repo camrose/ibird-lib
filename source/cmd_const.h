@@ -111,6 +111,9 @@
 #define CMD_REQUEST_ATTITUDE            (0x50)      // Request attitude
 #define CMD_RESPONSE_ATTITUDE           (0x51)      // Response to request for attitude
 
+#define CMD_REQUEST_STATE               (0x1A)
+#define CMD_RESPONSE_STATE              (0x1B)
+
 #define CMD_SET_TELEM_SUBSAMPLE         (0x52)      // Telemetry subsampling divider
 #define CMD_SET_SLEW_LIMIT              (0x53)      // Reference slew limiting
 
